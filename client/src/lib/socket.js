@@ -9,7 +9,11 @@ let socket = null;
 export const initSocket = (userId, role) => {
   if (socket?.connected) return socket;
 
-  socket = io('/', {
+  // In production, connect directly to the backend URL.
+  // In development, use '/' so the Vite proxy handles the upgrade.
+  const serverUrl = import.meta.env.VITE_API_URL || '/';
+
+  socket = io(serverUrl, {
     path: '/socket.io',
     transports: ['websocket', 'polling'],
     withCredentials: true,
