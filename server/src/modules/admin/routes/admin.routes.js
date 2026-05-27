@@ -1,0 +1,39 @@
+import { Router } from "express";
+import { AdminController } from "../controller/admin.controller.js";
+import { authenticate, authorize } from "../../../middlewares/auth.middleware.js";
+import { validateBody, validateParams } from "../../../middlewares/validate.middleware.js";
+import { z } from "zod";
+import { objectIdSchema } from "../../auth/validator/auth.validator.js";
+
+const router = Router();
+const adminController = new AdminController();
+
+// All admin routes require authentication + admin role
+router.use(authenticate, authorize("admin"));
+
+const userIdSchema = z.object({ userId: z.string().regex(/^[0-9a-fA-F]{24}$/) });
+const roleSchema = z.object({ role: z.enum(["user", "contributor", "admin"]) });
+const rejectSchema = z.object({ reason: z.string().min(1).optional() });
+const editFaqSchema = z.object({
+  title: z.string().min(10).max(300).optional(),
+  answer: z.string().min(20).max(10000).optional(),
+  category: z.enum(["internship", "placement", "resume", "dsa", "coding-interview", "career", "general"]).optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+// Dashboard
+router.get("/stats", adminController.getDashboardStats);
+router.get("/top-contributors", adminController.getTopContributors);
+
+// FAQ management
+router.get("/faqs/pending", adminController.getPendingFAQs);
+router.post("/faqs/:id/approve", validateParams(objectIdSchema), adminController.approveFAQ);
+router.put("/faqs/:id/edit-approve", validateParams(objectIdSchema), validateBody(editFaqSchema), adminController.editAndApproveFAQ);
+router.delete("/faqs/:id/reject", validateParams(objectIdSchema), validateBody(rejectSchema), adminController.rejectFAQ);
+
+// User management
+router.get("/users", adminController.getAllUsers);
+router.patch("/users/:userId/role", validateParams(userIdSchema), validateBody(roleSchema), adminController.updateUserRole);
+router.delete("/users/:userId", validateParams(userIdSchema), adminController.deactivateUser);
+
+export default router;
