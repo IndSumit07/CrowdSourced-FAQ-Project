@@ -11,7 +11,9 @@ const AdminDashboard = () => {
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const res = await adminService.getStats();
-      return res.data.data;
+      // getDashboardStats returns { stats: { faqs: {...}, queries: {...} } }
+      const payload = res.data.data;
+      return payload.stats ?? payload;
     },
   });
 
@@ -19,7 +21,9 @@ const AdminDashboard = () => {
     queryKey: ['pending-faqs'],
     queryFn: async () => {
       const res = await adminService.getPendingFAQs();
-      return res.data.data.docs || res.data.data;
+      // Server returns { faqs: [...], total: N } — extract the array
+      const payload = res.data.data;
+      return Array.isArray(payload) ? payload : (payload.faqs ?? []);
     },
   });
 
@@ -57,19 +61,24 @@ const AdminDashboard = () => {
           <>
             <div className="bg-stone-900 text-white p-5 rounded-2xl shadow-sm">
               <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mb-1">Total Users</p>
-              <p className="text-3xl font-black">{stats?.totalUsers || 0}</p>
+              {/* server: stats = { faqs: { total, published, pending }, queries: { open, ... } } */}
+              <p className="text-3xl font-black">{stats?.users?.total ?? stats?.totalUsers ?? '—'}</p>
             </div>
             <div className="bg-[#B45309] text-white p-5 rounded-2xl shadow-sm">
               <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">Total Queries</p>
-              <p className="text-3xl font-black">{stats?.totalQueries || 0}</p>
+              <p className="text-3xl font-black">
+                {Object.values(stats?.queries ?? {}).reduce((a, b) => a + b, 0) || stats?.totalQueries || '—'}
+              </p>
             </div>
             <div className="bg-[#0D9488] text-white p-5 rounded-2xl shadow-sm">
               <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">Published FAQs</p>
-              <p className="text-3xl font-black">{stats?.publishedFaqs || 0}</p>
+              <p className="text-3xl font-black">{stats?.faqs?.published ?? stats?.publishedFaqs ?? '—'}</p>
             </div>
             <div className="bg-white border border-stone-200 text-stone-900 p-5 rounded-2xl shadow-sm">
               <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Pending Review</p>
-              <p className="text-3xl font-black text-red-500">{stats?.pendingFaqs || pendingFAQs?.length || 0}</p>
+              <p className="text-3xl font-black text-red-500">
+                {stats?.faqs?.pending ?? pendingFAQs?.length ?? '—'}
+              </p>
             </div>
           </>
         )}
