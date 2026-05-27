@@ -116,7 +116,7 @@ const FAQPage = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full font-space-grotesk">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">
           Knowledge Base

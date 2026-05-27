@@ -19,7 +19,7 @@ export const faqService = {
 };
 
 export const queryService = {
-  submit: (question) => api.post("/queries", { question }),
+  submit: (question) => api.post("/queries", { question, force: true }),
   getById: (id) => api.get(`/queries/${id}`),
   getFeed: (params) => api.get("/queries/feed", { params }),
   getMyQueries: (params) => api.get("/queries/my", { params }),

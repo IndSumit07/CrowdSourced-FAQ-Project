@@ -6,7 +6,7 @@ const queryService = new QueryService();
 
 export class QueryController {
   submit = asyncHandler(async (req, res) => {
-    const result = await queryService.submit(req.body.question, req.user.id);
+    const result = await queryService.submit(req.body.question, req.user.id, req.body.force);
     if (result.resolved) {
       return ApiResponse.success(
         res,

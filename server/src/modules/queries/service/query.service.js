@@ -35,14 +35,14 @@ export class QueryService {
     this.#aiValidationService = new AIValidationService();
   }
 
-  /**
-   * Full query submission workflow.
-   */
-  async submit(question, creatorId) {
-    // Step 1: Try to resolve from existing FAQs
-    const resolution = await this.#faqService.resolveQuery(question);
-    if (resolution.faq) {
-      return { resolved: true, resolution };
+  async submit(question, creatorId, force = false) {
+    // Step 1: Try to resolve from existing FAQs unless forced
+    let resolution = { faq: null };
+    if (!force) {
+      resolution = await this.#faqService.resolveQuery(question);
+      if (resolution.faq) {
+        return { resolved: true, resolution };
+      }
     }
 
     // Step 2: AI relevance validation

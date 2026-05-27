@@ -22,6 +22,7 @@ const submitSchema = z.object({
     .string()
     .min(10, "Question must be at least 10 characters")
     .max(1000),
+  force: z.boolean().optional(),
 });
 
 const queryListSchema = z.object({
@@ -32,8 +33,18 @@ const queryListSchema = z.object({
   sortBy: z.string().optional().default("-createdAt"),
 });
 
+// ─── Static Routes (No Route Parameters) ───
 // Public
 router.get("/feed", validateQuery(queryListSchema), queryController.getFeed);
+
+// Auth Required
+router.get("/my", authenticate, validateQuery(queryListSchema), queryController.getMyQueries);
+
+// Admin Specific
+router.get("/admin/stats", authenticate, authorize("admin"), queryController.getStats);
+
+// ─── Dynamic & Wildcard Routes (Contains Route Parameters) ───
+// Public
 router.get("/:id", validateParams(objectIdSchema), queryController.getById);
 router.get(
   "/:id/responses",
@@ -41,23 +52,22 @@ router.get(
   queryController.getResponses,
 );
 
-// Auth required
-router.use(authenticate);
-router.post("/", aiLimiter, validateBody(submitSchema), queryController.submit);
-router.get("/my", validateQuery(queryListSchema), queryController.getMyQueries);
+// Auth Required mutations
+router.post("/", authenticate, aiLimiter, validateBody(submitSchema), queryController.submit);
 router.delete(
   "/:id",
+  authenticate,
   validateParams(objectIdSchema),
   queryController.deleteMyQuery,
 );
 
-// Admin
+// Admin General List
 router.get(
   "/",
+  authenticate,
   authorize("admin"),
   validateQuery(queryListSchema),
   queryController.getAll,
 );
-router.get("/admin/stats", authorize("admin"), queryController.getStats);
 
 export default router;
