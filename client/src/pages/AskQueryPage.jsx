@@ -142,11 +142,11 @@ const AskQueryPage = () => {
   const relatedFAQs = resolveResult
     ? [
         ...(resolveResult.faq
-          ? [{ faq: resolveResult.faq, matchType: resolveResult.matchType, isBest: true }]
+          ? [{ faq: resolveResult.faq, matchType: resolveResult.faq.matchType || resolveResult.matchType, isBest: true }]
           : []),
         ...(resolveResult.alternatives || []).map((faq) => ({
           faq,
-          matchType: resolveResult.matchType,
+          matchType: faq.matchType || resolveResult.matchType,
           isBest: false,
         })),
       ]
@@ -189,7 +189,7 @@ const AskQueryPage = () => {
         {/* Checking indicator */}
         {isChecking && (
           <p className="text-sm text-stone-500 italic animate-pulse flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> Searching existing FAQs…
+            <Sparkles className="w-4 h-4 text-amber-500" /> Searching existing FAQs for "{questionValue}"…
           </p>
         )}
 
@@ -225,18 +225,20 @@ const AskQueryPage = () => {
 
         {/* No results nudge */}
         {!isChecking && resolveResult && !hasResults && questionValue?.length >= 10 && (
-          <p className="text-sm text-stone-400 italic">
+          <p className="text-sm text-stone-600 font-medium italic">
             No existing FAQs matched your question. Submit it below!
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={submitMutation.isPending || isChecking}
-          className="px-6 py-3 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl font-extrabold tracking-wider transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {submitMutation.isPending ? "SUBMITTING..." : "SUBMIT QUERY"}
-        </button>
+        <div className="pt-4">
+          <button
+            type="submit"
+            disabled={submitMutation.isPending || isChecking}
+            className="px-6 py-3 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl font-extrabold tracking-wider transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {submitMutation.isPending ? "SUBMITTING..." : "SUBMIT QUERY"}
+          </button>
+        </div>
       </form>
     </div>
   );

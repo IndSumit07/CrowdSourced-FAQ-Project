@@ -21,33 +21,72 @@ export class FAQService {
   /**
    * Full query resolution workflow:
    * 1. Exact title match
-   * 2. Full-text search
-   * 3. Vector (semantic) search
+   * 2. Concurrent Full-text search and Vector (semantic) search
+   * 3. Merging and filtering out irrelevant matches
    */
   async resolveQuery(question) {
-    // Step 1: Exact match
+    // Step 1: Exact match (always 100% relevant)
     const exact = await this.#faqRepo.findExactMatch(question);
     if (exact) {
       await this.#faqRepo.incrementViews(exact._id);
-      return { faq: exact, matchType: "exact" };
+      const exactResult = { ...exact, matchType: "exact" };
+      return { faq: exactResult, matchType: "exact", alternatives: [] };
     }
 
-    // Step 2: Full-text search
-    const { results: textMatches } = await this.#faqRepo.textSearch(question, { limit: 3 });
-    if (textMatches.length > 0) {
-      await this.#faqRepo.incrementViews(textMatches[0]._id);
-      return { faq: textMatches[0], matchType: "text", alternatives: textMatches.slice(1) };
-    }
-
-    // Step 3: Vector search
+    // Generate embedding for vector search
     const embedding = await this.#embeddingService.embed(question);
-    const vectorMatches = await this.#faqRepo.vectorSearch(embedding);
-    if (vectorMatches.length > 0) {
-      await this.#faqRepo.incrementViews(vectorMatches[0]._id);
-      return { faq: vectorMatches[0], matchType: "semantic", alternatives: vectorMatches.slice(1), embedding };
+
+    // Fetch candidate matches from both Vector Search and Full-Text Search concurrently
+    const [vectorMatches, { results: textMatches }] = await Promise.all([
+      this.#faqRepo.vectorSearch(embedding, { limit: 5 }),
+      this.#faqRepo.textSearch(question, { limit: 5 }),
+    ]);
+
+    const mergedMatches = [];
+    const seenIds = new Set();
+
+    // 1. Process Vector matches first. They are already filtered by the similarity threshold
+    // in the database pipeline, so they are guaranteed to be semantically highly relevant.
+    for (const match of vectorMatches) {
+      const matchId = match._id.toString();
+      if (!seenIds.has(matchId)) {
+        seenIds.add(matchId);
+        mergedMatches.push({
+          ...match,
+          matchType: "semantic",
+        });
+      }
     }
 
-    return { faq: null, matchType: "none", embedding };
+    // 2. Process Full-Text matches.
+    // MongoDB text scores are not normalized, but a score < 1.5 usually indicates matching only minor/common words.
+    // We only accept text search matches that are highly relevant (score >= 1.5).
+    const MIN_TEXT_SCORE = 1.5;
+    for (const match of textMatches) {
+      const matchId = match._id.toString();
+      if (match.score >= MIN_TEXT_SCORE && !seenIds.has(matchId)) {
+        seenIds.add(matchId);
+        mergedMatches.push({
+          ...match,
+          matchType: "text",
+        });
+      }
+    }
+
+    // If we have any matches
+    if (mergedMatches.length > 0) {
+      const bestMatch = mergedMatches[0];
+      await this.#faqRepo.incrementViews(bestMatch._id);
+
+      return {
+        faq: bestMatch,
+        matchType: bestMatch.matchType,
+        alternatives: mergedMatches.slice(1),
+        embedding,
+      };
+    }
+
+    return { faq: null, matchType: "none", alternatives: [], embedding };
   }
 
   async getAll(query) {
