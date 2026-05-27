@@ -59,8 +59,9 @@ export class QueryService {
       resolution.embedding || (await this.#embeddingService.embed(question));
 
     // Step 4: Calculate deadline
-    const deadline = new Date();
-    deadline.setHours(deadline.getHours() + env.QUERY_DEADLINE_HOURS);
+    // Use ms arithmetic — setHours() truncates decimals (e.g. 0.1h → 0h)
+    const deadlineMs = env.QUERY_DEADLINE_HOURS * 60 * 60 * 1000;
+    const deadline = new Date(Date.now() + deadlineMs);
 
     // Step 5: Persist the query
     const query = await queryRepo.create({
