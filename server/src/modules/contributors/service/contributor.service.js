@@ -35,16 +35,24 @@ export class ContributorService {
 
     await queryRepo.addAcceptedContributor(queryId, contributorId);
 
-    // Notify the query creator
+    // Notify the query creator + broadcast updated contributor count to the feed
     try {
       const io = getIO();
       io.to(`user:${query.creator._id || query.creator}`).emit(
         SOCKET_EVENTS.CONTRIBUTOR_ACCEPTED,
         { queryId, contributorId, responseId: response._id }
       );
+
+      // Let everyone on the feed see the updated contributor count in real-time
+      io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_UPDATED, {
+        queryId,
+        status: "in-progress",
+        acceptedContributorsCount: (query.acceptedContributors?.length || 0) + 1,
+      });
     } catch (e) {
       logger.warn({ msg: "Could not emit contributor accepted event", err: e.message });
     }
+
 
     return response;
   }
@@ -68,10 +76,20 @@ export class ContributorService {
     // Notify admin room about new answer
     try {
       const io = getIO();
+      const newResponseCount = query.responseCount + 1;
+
       io.to("room:admin").emit(SOCKET_EVENTS.NEW_ANSWER, {
         queryId,
         contributorId,
-        responseCount: query.responseCount + 1,
+        responseCount: newResponseCount,
+      });
+
+      // Broadcast updated response count to the contributor feed so
+      // everyone's card reflects the latest tally without a page refresh.
+      io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_UPDATED, {
+        queryId,
+        responseCount: newResponseCount,
+        status: "in-progress",
       });
     } catch (e) {
       logger.warn({ msg: "Could not emit new answer event", err: e.message });

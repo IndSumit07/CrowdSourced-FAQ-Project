@@ -25,7 +25,12 @@ export class QueryRepository {
   }
 
   async findOpenQueries({ page = 1, limit = 20, skip = 0, category } = {}) {
-    const filter = { status: "open", ...(category && { category }) };
+    // Show both "open" and "in-progress" queries so the feed remains visible
+    // to all contributors until the deadline passes, not just the first acceptor.
+    const filter = {
+      status: { $in: ["open", "in-progress"] },
+      ...(category && { category }),
+    };
     const [queries, total] = await Promise.all([
       Query.find(filter)
         .sort({ deadline: 1 })

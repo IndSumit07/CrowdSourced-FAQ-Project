@@ -43,12 +43,22 @@ export const useSocketEvents = () => {
       ), { duration: 4000, position: 'bottom-right' });
     });
 
+    // Patch response count / status live — do NOT remove from feed yet
+    socket.on(SOCKET_EVENTS.QUERY_UPDATED, (data) => {
+      updateQuery(data.queryId, {
+        ...(data.responseCount !== undefined && { responseCount: data.responseCount }),
+        ...(data.status && { status: data.status }),
+      });
+    });
+
+    // Only remove from the live feed when the window truly closes
     socket.on(SOCKET_EVENTS.QUERY_EXPIRED, (data) => {
-      updateQuery(data.queryId, { status: 'expired' });
+      removeQuery(data.queryId);
+      toast(`⏰ Query closed: "${data.question?.slice(0, 50)}"`, { duration: 4000 });
     });
 
     socket.on(SOCKET_EVENTS.QUERY_COMPLETED, (data) => {
-      updateQuery(data.queryId, { status: 'completed' });
+      removeQuery(data.queryId);
     });
 
     // ─── FAQ events ───────────────────────────────────────────────
@@ -89,6 +99,7 @@ export const useSocketEvents = () => {
 
     return () => {
       socket.off(SOCKET_EVENTS.NEW_QUERY);
+      socket.off(SOCKET_EVENTS.QUERY_UPDATED);
       socket.off(SOCKET_EVENTS.QUERY_EXPIRED);
       socket.off(SOCKET_EVENTS.QUERY_COMPLETED);
       socket.off(SOCKET_EVENTS.FAQ_PUBLISHED);
