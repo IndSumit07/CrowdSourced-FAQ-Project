@@ -25,6 +25,10 @@ const editFaqSchema = z.object({
 router.get("/stats", adminController.getDashboardStats);
 router.get("/top-contributors", adminController.getTopContributors);
 
+// Query Management
+router.get("/queries/pending-review", adminController.getPendingReviewQueries);
+router.post("/queries/:id/publish-faq", validateParams(objectIdSchema), validateBody(editFaqSchema), adminController.publishQueryToFAQ);
+
 // FAQ management
 router.get("/faqs/pending", adminController.getPendingFAQs);
 router.post("/faqs/:id/approve", validateParams(objectIdSchema), adminController.approveFAQ);

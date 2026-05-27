@@ -49,38 +49,31 @@ export const deadlineWorker = new Worker(
 
     const responses = await responseRepo.findByQuery(queryId);
 
-    if (responses.length < env.MIN_CONTRIBUTOR_RESPONSES) {
-      await queryRepo.updateStatus(queryId, "expired");
+    // All expired queries now go to manual admin review
+    await queryRepo.updateStatus(queryId, "admin-review");
 
-      try {
-        const io = getIO();
-        io.emit(SOCKET_EVENTS.QUERY_EXPIRED, {
-          queryId,
-          question: query.question,
-        });
-        io.to(`user:${query.creator}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
-          type: "query_expired",
-          message:
-            "Your query expired without enough responses. Please try again.",
-          queryId,
-        });
-      } catch (e) {
-        logger.warn({ msg: "Could not emit expiry event", err: e.message });
-      }
-
-      return;
+    try {
+      const io = getIO();
+      io.emit(SOCKET_EVENTS.QUERY_EXPIRED, {
+        queryId,
+        question: query.question,
+      });
+      io.to(`user:${query.creator}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+        type: "query_expired",
+        message: "Your query expired and is pending admin review.",
+        queryId,
+      });
+      io.to("room:admin").emit(SOCKET_EVENTS.ADMIN_NOTIFICATION, {
+        message: `Query expired and is ready for review: "${query.question}"`,
+        type: "query_review",
+        queryId,
+      });
+    } catch (e) {
+      logger.warn({ msg: "Could not emit expiry event", err: e.message });
     }
 
-    // Enough responses — trigger summarization
-    await queryRepo.updateStatus(queryId, "processing");
-    await aiSummarizationQueue.add(
-      "summarize",
-      { queryId },
-      { jobId: `summarize_${queryId}` },
-    );
-
     logger.info({
-      msg: "Deadline processed, queued for summarization",
+      msg: "Deadline processed, pending admin review",
       queryId,
       responseCount: responses.length,
     });

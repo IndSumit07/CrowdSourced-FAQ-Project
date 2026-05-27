@@ -5,6 +5,17 @@ import { asyncHandler } from "../../../utils/asyncHandler.js";
 const adminService = new AdminService();
 
 export class AdminController {
+  // Query Management
+  getPendingReviewQueries = asyncHandler(async (req, res) => {
+    const { queries, total } = await adminService.getPendingReviewQueries(req.query);
+    return ApiResponse.success(res, { queries, total });
+  });
+
+  publishQueryToFAQ = asyncHandler(async (req, res) => {
+    const faq = await adminService.publishQueryToFAQ(req.params.id, req.user.id, req.body);
+    return ApiResponse.success(res, { faq }, "FAQ published successfully");
+  });
+
   // FAQ Management
   getPendingFAQs = asyncHandler(async (req, res) => {
     const { faqs, total } = await adminService.getPendingFAQs(req.query);
