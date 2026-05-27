@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 /* ─── Premium Live Q&A Preview Card ─── */
 const QAPreviewCard = () => (
   <div className="w-full bg-white rounded-3xl p-6 shadow-soft border border-stone-200/50 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-strong animate-pulse-card">
@@ -240,7 +242,7 @@ const BottomSection = () => {
               </ul>
             </div>
 
-            <button className="group flex items-center gap-2 bg-[#B45309] hover:bg-stone-900 text-[#FAF6F0] rounded-full pl-5 pr-2 py-3 text-sm font-semibold w-fit hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-soft">
+            <Link to="/faqs" className="group flex items-center gap-2 bg-[#B45309] hover:bg-stone-900 text-[#FAF6F0] rounded-full pl-5 pr-2 py-3 text-sm font-semibold w-fit hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-soft">
               Explore the FAQ Database
               <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-3.5 h-3.5 stroke-white" viewBox="0 0 14 14" fill="none">
@@ -252,7 +254,7 @@ const BottomSection = () => {
                   />
                 </svg>
               </div>
-            </button>
+            </Link>
           </div>
         </div>
 

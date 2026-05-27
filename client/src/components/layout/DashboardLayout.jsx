@@ -17,14 +17,14 @@ const DashboardLayout = () => {
       path: "/contributions",
       roles: ["user", "admin"],
     },
-    { name: "Ask Query", path: "/ask", roles: ["user", "admin"] },
-    { name: "Live Feed", path: "/feed", roles: ["user", "admin"] },
-    { name: "FAQs", path: "/faqs", roles: ["user", "admin"] },
+    { name: "Ask Query", path: "/ask", roles: ["user", "admin", "guest"] },
+    { name: "Live Feed", path: "/feed", roles: ["user", "admin", "guest"] },
+    { name: "FAQs", path: "/faqs", roles: ["user", "admin", "guest"] },
     { name: "Profile", path: "/profile", roles: ["user", "admin"] },
   ];
 
   const allowedLinks = navLinks.filter((link) =>
-    link.roles.includes(user?.role),
+    link.roles.includes(user?.role || "guest"),
   );
 
   return (
@@ -37,16 +37,35 @@ const DashboardLayout = () => {
           <aside className="w-full md:fixed md:left-6 md:top-28 md:w-64 md:h-[calc(100vh-8rem)] md:overflow-y-auto flex-shrink-0">
             <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
               <div className="mb-6 pb-6 border-b border-stone-100">
-                <h2 className="text-lg font-bold text-stone-900">
-                  {user?.name}
-                </h2>
-                <p className="text-sm text-stone-500 capitalize">
-                  {user?.role}
-                </p>
-                {user?.role !== "admin" && (
-                  <div className="mt-2 text-xs font-medium text-[#B45309] bg-[#B45309]/10 py-1 px-2 rounded-md inline-block">
-                    Reputation: {user?.reputation || 0}
-                  </div>
+                {user ? (
+                  <>
+                    <h2 className="text-lg font-bold text-stone-900">
+                      {user.name}
+                    </h2>
+                    <p className="text-sm text-stone-500 capitalize">
+                      {user.role}
+                    </p>
+                    {user.role !== "admin" && (
+                      <div className="mt-2 text-xs font-medium text-[#B45309] bg-[#B45309]/10 py-1 px-2 rounded-md inline-block">
+                        Reputation: {user.reputation || 0}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-lg font-bold text-stone-900">
+                      Guest Session
+                    </h2>
+                    <p className="text-sm text-stone-400">
+                      Anonymous Viewer
+                    </p>
+                    <Link
+                      to="/login"
+                      className="mt-3 block text-center text-xs font-extrabold uppercase tracking-wider text-white bg-[#B45309] hover:bg-stone-900 py-2 px-3 rounded-xl transition-all shadow-sm hover:shadow"
+                    >
+                      Sign In to Participate
+                    </Link>
+                  </>
                 )}
               </div>
 

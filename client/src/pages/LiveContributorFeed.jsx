@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 import { useFeedStore } from "../store/feedStore";
 import { queryService, contributorService } from "../services/api";
 import { CountdownTimer } from "../components/ui/CountdownTimer";
@@ -11,6 +13,8 @@ import toast from "react-hot-toast";
 
 const QueryCard = ({ q }) => {
   const { updateQuery } = useFeedStore();
+  const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const queryId = q._id || q.queryId;
 
   const [phase, setPhase] = useState("idle"); // "idle" | "accepted" | "submitted" | "skipped"
@@ -20,6 +24,11 @@ const QueryCard = ({ q }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const handleAccept = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to participate in answering queries.");
+      navigate("/login", { state: { redirectTo: "/feed" } });
+      return;
+    }
     try {
       await contributorService.accept(queryId);
       setPhase("accepted");
@@ -59,6 +68,11 @@ const QueryCard = ({ q }) => {
   };
 
   const handleSkip = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to participate in answering queries.");
+      navigate("/login", { state: { redirectTo: "/feed" } });
+      return;
+    }
     try {
       await contributorService.skip(queryId);
       setPhase("skipped");

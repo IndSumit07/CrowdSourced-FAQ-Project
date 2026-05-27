@@ -53,14 +53,17 @@ const AppRoutes = () => {
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       
-      {/* Protected Routes inside DashboardLayout */}
-      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<DashboardRouter />} />
-        <Route path="/contributions" element={<ContributorDashboard />} />
+      {/* Routes inside DashboardLayout */}
+      <Route element={<DashboardLayout />}>
+        {/* Public dashboard pages */}
         <Route path="/faqs" element={<FAQPage />} />
         <Route path="/ask" element={<AskQueryPage />} />
         <Route path="/feed" element={<LiveContributorFeed />} />
-        <Route path="/profile" element={<ProfilePage />} />
+
+        {/* Protected dashboard pages */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
+        <Route path="/contributions" element={<ProtectedRoute><ContributorDashboard /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

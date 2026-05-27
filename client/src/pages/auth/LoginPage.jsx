@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 import SiteHeader from "../../components/layout/SiteHeader";
@@ -15,6 +15,7 @@ const LoginPage = () => {
   const login = useAuthStore((state) => state.login);
   const isLoading = useAuthStore((state) => state.isLoading);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register,
@@ -28,7 +29,8 @@ const LoginPage = () => {
     const res = await login(data);
     if (res.success) {
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      const from = location.state?.redirectTo || "/dashboard";
+      navigate(from, { state: location.state, replace: true });
     } else {
       toast.error(res.message || "Login failed");
     }

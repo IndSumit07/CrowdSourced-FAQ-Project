@@ -34,17 +34,17 @@ const queryListSchema = z.object({
 
 // Public
 router.get("/feed", validateQuery(queryListSchema), queryController.getFeed);
-
-// Auth required
-router.use(authenticate);
-router.post("/", aiLimiter, validateBody(submitSchema), queryController.submit);
-router.get("/my", validateQuery(queryListSchema), queryController.getMyQueries);
 router.get("/:id", validateParams(objectIdSchema), queryController.getById);
 router.get(
   "/:id/responses",
   validateParams(objectIdSchema),
   queryController.getResponses,
 );
+
+// Auth required
+router.use(authenticate);
+router.post("/", aiLimiter, validateBody(submitSchema), queryController.submit);
+router.get("/my", validateQuery(queryListSchema), queryController.getMyQueries);
 router.delete(
   "/:id",
   validateParams(objectIdSchema),

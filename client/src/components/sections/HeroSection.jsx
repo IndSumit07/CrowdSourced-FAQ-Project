@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 /* ─── Shared cartoon character SVG ─── */
 const CharacterSVG = () => (
   <svg
@@ -148,11 +150,12 @@ const HeroSection = () => {
         {/* CTA row */}
         <div className="mt-7 flex items-center justify-center gap-4">
           {/* Primary button */}
-          <button className="bg-stone-900 hover:bg-[#B45309] text-white rounded-full px-6 py-3 md:px-7 md:py-[14px] text-xs sm:text-sm font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-pointer">
+          <Link to="/faqs" className="bg-stone-900 hover:bg-[#B45309] text-white rounded-full px-6 py-3 md:px-7 md:py-[14px] text-xs sm:text-sm font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-pointer inline-block">
             Browse Trusted FAQs
-          </button>
+          </Link>
           {/* Ask question button */}
-          <button 
+          <Link 
+            to="/ask"
             className="group w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-stone-200 bg-white flex items-center justify-center hover:border-stone-800 hover:bg-stone-800 hover:text-white transition-all duration-200 cursor-pointer" 
             title="Ask a Question"
           >
@@ -165,7 +168,7 @@ const HeroSection = () => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z" />
             </svg>
-          </button>
+          </Link>
         </div>
       </div>
 

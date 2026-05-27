@@ -5,8 +5,9 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { faqService, queryService } from "../services/api";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronUp, Sparkles, BookOpen, AlertCircle } from "lucide-react";
+import { useAuthStore } from "../store/authStore";
 
 const querySchema = z.object({
   question: z
@@ -97,6 +98,8 @@ const AskQueryPage = () => {
   const [resolveResult, setResolveResult] = useState(null); // { faq, alternatives, matchType }
   const [isChecking, setIsChecking] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuthStore();
 
   const {
     register,
@@ -105,6 +108,9 @@ const AskQueryPage = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(querySchema),
+    defaultValues: {
+      question: location.state?.question || "",
+    },
   });
 
   const questionValue = watch("question");
@@ -135,6 +141,11 @@ const AskQueryPage = () => {
   });
 
   const onSubmit = (data) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to submit your query.");
+      navigate("/login", { state: { redirectTo: "/ask", question: data.question } });
+      return;
+    }
     submitMutation.mutate(data);
   };
 
