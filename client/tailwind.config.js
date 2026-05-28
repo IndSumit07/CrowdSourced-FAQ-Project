@@ -4,15 +4,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Alegreya Sans", "system-ui", "sans-serif"],
-        display: ["Alegreya", "Georgia", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "sans-serif"],
       },
       colors: {
-        border: "rgba(255,255,255,0.08)",
+        border: "rgba(0,0,0,0.08)",
         bg: {
-          primary: "#0b0f1a",
-          secondary: "#111827",
-          elevated: "#1a2236",
+          primary: "#ffffff",
+          secondary: "#f9fafb",
+          elevated: "#ffffff",
         },
       },
       backgroundOpacity: { 8: "0.08" },

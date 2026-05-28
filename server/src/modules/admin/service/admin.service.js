@@ -6,6 +6,8 @@ import { EmbeddingService } from "../../ai/service/embedding.service.js";
 import { NotFoundError, BadRequestError } from "../../../utils/errors.js";
 import { cacheDelPattern } from "../../../utils/cache.js";
 import { logger } from "../../../utils/logger.js";
+import { getIO } from "../../../configs/socket.config.js";
+import { SOCKET_EVENTS } from "../../realtime/constants/events.js";
 
 const faqRepo = new FAQRepository();
 const userRepo = new UserRepository();
@@ -34,10 +36,28 @@ export class AdminService {
     return { queries: queriesWithAnswers, total };
   }
 
-  async publishQueryToFAQ(queryId, adminId, { answer, category, tags }) {
+  async publishQueryToFAQ(queryId, adminId, { answer, category, tags, responseId }) {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
     if (query.status !== "admin-review") throw new BadRequestError("Query is not pending review");
+
+    const answers = await responseRepo.findByQuery(queryId);
+
+    // Prefer finding by responseId (reliable), fall back to text match for backward compat
+    let selectedResponse = null;
+    if (responseId) {
+      selectedResponse = answers.find(a => a._id.toString() === responseId.toString());
+    }
+    if (!selectedResponse && answer) {
+      selectedResponse = answers.find(a => a.answer === answer);
+    }
+
+    let acceptedContributorId = null;
+    if (selectedResponse) {
+      await responseRepo.updateById(selectedResponse._id, { accepted: true });
+      acceptedContributorId = (selectedResponse.contributor._id || selectedResponse.contributor).toString();
+      await userRepo.incrementReputationAndAccepted(acceptedContributorId, 10);
+    }
 
     // Generate embedding
     const embedding = await embeddingService.embed(query.question);
@@ -57,11 +77,44 @@ export class AdminService {
       publishedAt: new Date(),
     });
 
-    // Update Query
+    // Update Query with completion info
+    const resolvedAt = new Date();
     await queryRepo.updateById(queryId, {
       status: "completed",
       faqGenerated: faq._id,
+      resolvedAnswer: answer,
+      resolvedAt,
     });
+
+    // Notify the query creator via realtime socket
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+    try {
+      const io = getIO();
+      io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+        type: "query_answered",
+        message: "Your query has been answered and published!",
+        queryId: queryId.toString(),
+        faqId: faq._id.toString(),
+        answer,
+        resolvedAt: resolvedAt.toISOString(),
+      });
+      logger.info({ msg: "Notified creator of query resolution", queryId, creatorId });
+
+      // Notify the accepted contributor (if different from creator)
+      if (acceptedContributorId && acceptedContributorId !== creatorId) {
+        io.to(`user:${acceptedContributorId}`).emit(SOCKET_EVENTS.CONTRIBUTOR_ANSWER_ACCEPTED, {
+          type: "answer_accepted",
+          message: "🎉 Your answer was selected by the admin! You earned +10 reputation.",
+          queryId: queryId.toString(),
+          faqId: faq._id.toString(),
+          reputationGained: 10,
+          question: query.question,
+        });
+        logger.info({ msg: "Notified contributor of answer acceptance", queryId, contributorId: acceptedContributorId });
+      }
+    } catch (socketErr) {
+      logger.warn({ msg: "Could not emit query_answered event", err: socketErr.message });
+    }
 
     await cacheDelPattern(`faqs:*`);
     return faq;

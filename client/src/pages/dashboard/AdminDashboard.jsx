@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '../../services/api';
-import { Skeleton } from '../../components/ui/Skeleton';
+import { StatsGridSkeleton, PendingQueriesSkeleton, PendingFAQsSkeleton } from '../../components/skeleton-loaders';
 import toast from 'react-hot-toast';
+import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
@@ -36,7 +37,16 @@ const AdminDashboard = () => {
     },
   });
 
-  const [selectedAnswer, setSelectedAnswer] = useState({});
+  // Track per-query: { responseId, answer } object
+  const [selectedResponse, setSelectedResponse] = useState({});
+  // Track edited final answer text per query
+  const [finalAnswer, setFinalAnswer] = useState({});
+
+  const handleSelectAnswer = (queryId, ans) => {
+    setSelectedResponse(prev => ({ ...prev, [queryId]: { id: ans._id, answer: ans.answer } }));
+    // Only pre-fill if no custom text has been typed
+    setFinalAnswer(prev => ({ ...prev, [queryId]: ans.answer }));
+  };
 
   const publishQueryMutation = useMutation({
     mutationFn: ({ id, data }) => adminService.publishQueryToFAQ(id, data),
@@ -70,34 +80,45 @@ const AdminDashboard = () => {
   return (
     <div className="w-full">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">Admin Dashboard</h1>
-        <p className="text-stone-500">Platform overview and content moderation</p>
+        <h1 className="text-3xl font-bold text-stone-900 font-display mb-2 tracking-tight">Admin Dashboard</h1>
+        <p className="text-stone-500 text-sm">Platform overview and content moderation</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-12">
         {statsLoading ? (
-          Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)
+          <StatsGridSkeleton />
         ) : (
           <>
-            <div className="bg-stone-900 text-white p-5 rounded-2xl shadow-sm">
-              <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mb-1">Total Users</p>
-              {/* server: stats = { faqs: { total, published, pending }, queries: { open, ... } } */}
-              <p className="text-3xl font-black">{stats?.users?.total ?? stats?.totalUsers ?? '—'}</p>
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Total Users</p>
+                <Users className="w-5 h-5 text-teal-600" />
+              </div>
+              <p className="text-4xl font-display font-bold text-stone-900">{stats?.users?.total ?? stats?.totalUsers ?? '—'}</p>
             </div>
-            <div className="bg-[#B45309] text-white p-5 rounded-2xl shadow-sm">
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">Total Queries</p>
-              <p className="text-3xl font-black">
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Total Queries</p>
+                <MessageSquare className="w-5 h-5 text-amber-600" />
+              </div>
+              <p className="text-4xl font-display font-bold text-stone-900">
                 {Object.values(stats?.queries ?? {}).reduce((a, b) => a + b, 0) || stats?.totalQueries || '—'}
               </p>
             </div>
-            <div className="bg-[#0D9488] text-white p-5 rounded-2xl shadow-sm">
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">Published FAQs</p>
-              <p className="text-3xl font-black">{stats?.faqs?.published ?? stats?.publishedFaqs ?? '—'}</p>
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Published FAQs</p>
+                <CheckSquare className="w-5 h-5 text-emerald-600" />
+              </div>
+              <p className="text-4xl font-display font-bold text-stone-900">{stats?.faqs?.published ?? stats?.publishedFaqs ?? '—'}</p>
             </div>
-            <div className="bg-white border border-stone-200 text-stone-900 p-5 rounded-2xl shadow-sm">
-              <p className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-1">Pending Review</p>
-              <p className="text-3xl font-black text-red-500">
+            <div className="bg-white border border-red-100 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-red-500 text-[11px] font-bold uppercase tracking-widest">Pending Review</p>
+                <Clock className="w-5 h-5 text-red-500" />
+              </div>
+              <p className="text-4xl font-display font-bold text-red-600">
                 {stats?.faqs?.pending ?? pendingFAQs?.length ?? '—'}
               </p>
             </div>
@@ -106,99 +127,209 @@ const AdminDashboard = () => {
       </div>
 
       {/* Pending Review Queries section */}
-      <div className="mb-6 mt-12 border-b border-stone-200 pb-2">
-        <h2 className="text-xl font-bold text-stone-900">Pending Review (Expired Queries)</h2>
-        <p className="text-sm text-stone-500">Review answers, edit, and publish to main FAQ database</p>
+      <div className="mb-6 mt-12 border-b border-stone-100 pb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">Pending Review (Expired Queries)</h2>
+          <p className="text-sm text-stone-500 mt-1">Select the best contributor answer, edit if needed, then publish to the FAQ database</p>
+        </div>
       </div>
 
       {queriesLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full rounded-2xl" />
-        </div>
+        <PendingQueriesSkeleton />
       ) : pendingQueries?.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-stone-300 rounded-3xl bg-stone-50">
-          <p className="text-stone-500 font-medium">No expired queries pending review.</p>
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-stone-200 rounded-3xl bg-white shadow-sm">
+          <CheckSquare className="w-12 h-12 text-stone-300 mb-4" />
+          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">No expired queries pending review.</p>
+          <p className="text-stone-400 text-sm mt-1">You're all caught up here.</p>
         </div>
       ) : (
         <div className="grid gap-6 mb-12">
-          {pendingQueries?.map((query) => (
-            <div key={query._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex gap-2 mb-3">
-                <span className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase">
-                  {query.category}
-                </span>
-              </div>
-              
-              <h3 className="text-lg font-bold text-stone-900 mb-4">{query.question}</h3>
-              
-              <div className="space-y-4 mb-6">
-                <h4 className="text-sm font-bold text-stone-700">Contributor Answers ({query.answers?.length || 0})</h4>
-                {query.answers?.length > 0 ? (
-                  query.answers.map((ans, idx) => (
-                    <div key={ans._id} className="bg-stone-50 p-4 rounded-xl border border-stone-200 cursor-pointer hover:border-[#0D9488] transition-colors"
-                         onClick={() => setSelectedAnswer({ ...selectedAnswer, [query._id]: ans.answer })}>
-                      <p className="text-xs text-stone-500 mb-1 font-bold">Answer {idx + 1} (Click to select)</p>
-                      <p className="text-stone-700 text-sm leading-relaxed">{ans.answer}</p>
+          {pendingQueries?.map((query) => {
+            const sel = selectedResponse[query._id];
+            const currentAnswer = finalAnswer[query._id] || '';
+            const hasAnswers = query.answers?.length > 0;
+
+            return (
+              <div key={query._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                <div className="flex gap-2 mb-4">
+                  <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                    {query.category}
+                  </span>
+                  <span className="px-2.5 py-1 bg-purple-50 border border-purple-100 text-purple-700 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    admin-review
+                  </span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-stone-900 mb-5 font-display tracking-tight leading-snug">{query.question}</h3>
+                
+                {/* Contributor Answers */}
+                <div className="space-y-4 mb-6">
+                  <h4 className="text-sm font-bold text-stone-700 flex items-center gap-2 uppercase tracking-wider">
+                    <Users className="h-4 w-4 text-stone-400" />
+                    Contributor Answers ({query.answers?.length || 0})
+                  </h4>
+
+                  {hasAnswers ? (
+                    query.answers.map((ans, idx) => {
+                      const isSelected = sel?.id === ans._id;
+                      return (
+                        <div
+                          key={ans._id}
+                          onClick={() => handleSelectAnswer(query._id, ans)}
+                          className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            isSelected
+                              ? 'border-[#0D9488] bg-teal-50 shadow-sm'
+                              : 'border-stone-200 bg-stone-50 hover:border-teal-300 hover:bg-teal-50/30'
+                          }`}
+                        >
+                          {/* Selected badge */}
+                          {isSelected && (
+                            <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-[#0D9488] text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Selected
+                            </span>
+                          )}
+
+                          {/* Contributor info row */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                              {(ans.contributor?.name || 'C').charAt(0)}
+                            </div>
+                            <span className="text-xs font-bold text-stone-700">
+                              {ans.contributor?.name || 'Contributor'}
+                            </span>
+                            {ans.contributor?.reputation !== undefined && (
+                              <span className="text-[10px] text-stone-400 font-semibold">
+                                ⭐ {ans.contributor.reputation} rep
+                              </span>
+                            )}
+                            <span className="ml-auto text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                              Answer {idx + 1}
+                            </span>
+                            {ans.confidence && (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                ans.confidence >= 4 ? 'bg-green-100 text-green-700' :
+                                ans.confidence >= 3 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                Confidence {ans.confidence}/5
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-stone-700 text-sm leading-relaxed">{ans.answer}</p>
+
+                          {!isSelected && (
+                            <p className="text-[10px] text-teal-600 font-bold mt-2 uppercase tracking-wider">
+                              Click to select this answer
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-4 rounded-xl border border-dashed border-stone-200 bg-stone-50 text-center">
+                      <p className="text-sm text-stone-500 italic">No answers submitted by contributors.</p>
+                      <p className="text-xs text-stone-400 mt-1">You can still write a custom answer below and publish it.</p>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-stone-500 italic">No answers provided by contributors.</p>
+                  )}
+                </div>
+
+                {/* Reputation reward notice */}
+                {sel && (
+                  <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    <p className="text-xs font-bold text-amber-800">
+                      The selected contributor will earn <span className="text-amber-600">+10 reputation</span> when you publish this answer.
+                    </p>
+                  </div>
                 )}
-              </div>
 
-              <div className="mb-6">
-                <h4 className="text-sm font-bold text-stone-700 mb-2">Final Answer (Edit before publishing)</h4>
-                <textarea
-                  className="w-full bg-white border border-stone-300 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
-                  rows={4}
-                  placeholder="Select an answer above or type the final answer here..."
-                  value={selectedAnswer[query._id] || ''}
-                  onChange={(e) => setSelectedAnswer({ ...selectedAnswer, [query._id]: e.target.value })}
-                />
-              </div>
+                {/* Final Answer Editor */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <MessageSquare className="h-4 w-4 text-stone-400" />
+                    Final Answer
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">(edit before publishing)</span>
+                  </h4>
+                  <textarea
+                    className="w-full bg-white border border-stone-300 rounded-xl p-4 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                    rows={5}
+                    placeholder="Select an answer above or type the final answer here..."
+                    value={currentAnswer}
+                    onChange={(e) => setFinalAnswer(prev => ({ ...prev, [query._id]: e.target.value }))}
+                  />
+                </div>
 
-              <div className="flex gap-3 justify-end">
-                <button 
-                  onClick={() => publishQueryMutation.mutate({ id: query._id, data: { answer: selectedAnswer[query._id] } })}
-                  disabled={publishQueryMutation.isPending || !selectedAnswer[query._id]?.trim()}
-                  className="px-5 py-2 bg-[#0D9488] hover:bg-teal-700 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm disabled:opacity-50"
-                >
-                  PUBLISH AS FAQ
-                </button>
+                <div className="flex gap-3 justify-end items-center">
+                  {!currentAnswer?.trim() && (
+                    <p className="text-xs text-stone-400 mr-auto">Select or write an answer to publish</p>
+                  )}
+                  <button 
+                    onClick={() => publishQueryMutation.mutate({
+                      id: query._id,
+                      data: {
+                        answer: currentAnswer,
+                        responseId: sel?.id || undefined,
+                      }
+                    })}
+                    disabled={publishQueryMutation.isPending || !currentAnswer?.trim()}
+                    className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {publishQueryMutation.isPending ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        PUBLISHING...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        PUBLISH AS FAQ
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Pending FAQs section */}
-      <div className="mb-6 border-b border-stone-200 pb-2">
-        <h2 className="text-xl font-bold text-stone-900">Pending Approvals (AI Generated)</h2>
+      <div className="mb-6 border-b border-stone-100 pb-3 mt-12">
+        <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">Pending Approvals (AI Generated)</h2>
       </div>
 
       {faqsLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full rounded-2xl" />
-          <Skeleton className="h-32 w-full rounded-2xl" />
-        </div>
+        <PendingFAQsSkeleton />
       ) : pendingFAQs?.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-stone-300 rounded-3xl bg-stone-50">
-          <p className="text-stone-500 font-medium">All caught up! No pending FAQs to review.</p>
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-stone-200 rounded-3xl bg-white shadow-sm">
+          <CheckSquare className="w-12 h-12 text-stone-300 mb-4" />
+          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">All caught up!</p>
+          <p className="text-stone-400 text-sm mt-1">No pending FAQs to review.</p>
         </div>
       ) : (
         <div className="grid gap-6">
           {pendingFAQs?.map((faq) => (
-            <div key={faq._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex gap-2 mb-3">
+            <div key={faq._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div className="flex gap-2 mb-4">
                 {faq.tags?.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase">
+                  <span key={tag} className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
                     {tag}
                   </span>
                 ))}
               </div>
               
-              <h3 className="text-lg font-bold text-stone-900 mb-2">{faq.title}</h3>
-              <div className="bg-[#FAF6F0] p-4 rounded-xl border border-stone-200 mb-6">
+              <h3 className="text-xl font-bold text-stone-900 mb-3 font-display tracking-tight leading-snug">{faq.title}</h3>
+              <div className="bg-stone-50 p-5 rounded-xl border border-stone-200 mb-6 shadow-inner">
                 <p className="text-stone-700 text-sm leading-relaxed">{faq.answer}</p>
               </div>
 
@@ -206,15 +337,17 @@ const AdminDashboard = () => {
                 <button 
                   onClick={() => rejectMutation.mutate(faq._id)}
                   disabled={rejectMutation.isPending || approveMutation.isPending}
-                  className="px-5 py-2 border border-stone-200 hover:bg-red-50 text-stone-600 hover:text-red-600 rounded-xl text-sm font-extrabold tracking-wider transition-colors disabled:opacity-50"
+                  className="px-6 py-2 border border-stone-200 hover:bg-red-50 hover:border-red-200 text-stone-600 hover:text-red-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
                 >
+                  <XCircle className="w-4 h-4" />
                   REJECT
                 </button>
                 <button 
                   onClick={() => approveMutation.mutate(faq._id)}
                   disabled={approveMutation.isPending || rejectMutation.isPending}
-                  className="px-5 py-2 bg-[#0D9488] hover:bg-teal-700 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm disabled:opacity-50"
+                  className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
                 >
+                  <CheckCircle2 className="w-4 h-4" />
                   APPROVE & PUBLISH
                 </button>
               </div>

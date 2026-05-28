@@ -1,4 +1,4 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
 let socket = null;
 
@@ -11,11 +11,11 @@ export const initSocket = (userId, role) => {
 
   // In production, connect directly to the backend URL.
   // In development, use '/' so the Vite proxy handles the upgrade.
-  const serverUrl = import.meta.env.VITE_API_URL || '/';
+  const serverUrl = import.meta.env.VITE_API_URL || "/";
 
   socket = io(serverUrl, {
-    path: '/socket.io',
-    transports: ['websocket', 'polling'],
+    path: "/socket.io",
+    transports: ["websocket", "polling"],
     withCredentials: true,
     auth: { userId, role },
     reconnectionAttempts: 5,
@@ -23,16 +23,16 @@ export const initSocket = (userId, role) => {
     timeout: 10000,
   });
 
-  socket.on('connect', () => {
-    console.info('[Socket] Connected:', socket.id);
+  socket.on("connect", () => {
+    console.info("[Socket] Connected:", socket.id);
   });
 
-  socket.on('disconnect', (reason) => {
-    console.warn('[Socket] Disconnected:', reason);
+  socket.on("disconnect", (reason) => {
+    console.warn("[Socket] Disconnected:", reason);
   });
 
-  socket.on('connect_error', (err) => {
-    console.error('[Socket] Connection error:', err.message);
+  socket.on("connect_error", (err) => {
+    console.error("[Socket] Connection error:", err.message);
   });
 
   return socket;
@@ -47,14 +47,14 @@ export const getSocket = () => socket;
  * Joins the live contributor feed room.
  */
 export const joinContributorFeed = () => {
-  socket?.emit('join:contributor-feed');
+  socket?.emit("join:contributor-feed");
 };
 
 /**
  * Joins the admin notification room.
  */
 export const joinAdminRoom = () => {
-  socket?.emit('join:admin');
+  socket?.emit("join:admin");
 };
 
 /**
@@ -69,15 +69,16 @@ export const disconnectSocket = () => {
 
 // ─── Event name constants (mirrors server SOCKET_EVENTS) ──────────────────
 export const SOCKET_EVENTS = {
-  NEW_QUERY: 'query:new',
-  QUERY_UPDATED: 'query:updated',
-  QUERY_EXPIRED: 'query:expired',
-  QUERY_COMPLETED: 'query:completed',
-  CONTRIBUTOR_ACCEPTED: 'contributor:accepted',
-  NEW_ANSWER: 'contributor:answer',
-  FAQ_PUBLISHED: 'faq:published',
-  FAQ_PENDING_REVIEW: 'faq:pending-review',
-  ADMIN_NOTIFICATION: 'admin:notification',
-  DEADLINE_APPROACHING: 'deadline:approaching',
-  USER_NOTIFICATION: 'notification:user',
+  NEW_QUERY: "query:new",
+  QUERY_UPDATED: "query:updated",
+  QUERY_EXPIRED: "query:expired",
+  QUERY_COMPLETED: "query:completed",
+  CONTRIBUTOR_ACCEPTED: "contributor:accepted",
+  NEW_ANSWER: "contributor:answer",
+  CONTRIBUTOR_ANSWER_ACCEPTED: "contributor:answer-accepted",
+  FAQ_PUBLISHED: "faq:published",
+  FAQ_PENDING_REVIEW: "faq:pending-review",
+  ADMIN_NOTIFICATION: "admin:notification",
+  DEADLINE_APPROACHING: "deadline:approaching",
+  USER_NOTIFICATION: "notification:user",
 };

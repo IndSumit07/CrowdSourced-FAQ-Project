@@ -65,6 +65,14 @@ const querySchema = new mongoose.Schema(
       ref: "FAQ",
       default: null,
     },
+    resolvedAnswer: {
+      type: String,
+      default: null,
+    },
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

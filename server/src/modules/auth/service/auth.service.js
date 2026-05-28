@@ -24,6 +24,17 @@ const buildTokenPayload = (user) => ({
   name: user.name,
 });
 
+const buildUserResponse = (user) => ({
+  id: user._id.toString(),
+  email: user.email,
+  role: user.role,
+  name: user.name,
+  reputation: user.reputation ?? 0,
+  expertise: user.expertise ?? [],
+  totalAnswers: user.totalAnswers ?? 0,
+  totalAccepted: user.totalAccepted ?? 0,
+});
+
 export class AuthService {
   async register(dto) {
     const exists = await userRepo.existsByEmail(dto.email);
@@ -45,10 +56,14 @@ export class AuthService {
 
     await userRepo.updateRefreshToken(user._id, hashedRefresh, family);
 
-    logger.info({ msg: "User registered", userId: user._id, email: user.email });
+    logger.info({
+      msg: "User registered",
+      userId: user._id,
+      email: user.email,
+    });
 
     return {
-      user: { ...payload, reputation: 0, expertise: user.expertise },
+      user: buildUserResponse(user),
       accessToken,
       refreshToken,
     };
@@ -56,7 +71,9 @@ export class AuthService {
 
   async login(dto) {
     // Fetch with password (not in lean by default)
-    const user = await userRepo.findByEmail(dto.email, { includePassword: true });
+    const user = await userRepo.findByEmail(dto.email, {
+      includePassword: true,
+    });
     if (!user) throw new UnauthorizedError("Invalid credentials");
     if (!user.isActive) throw new UnauthorizedError("Account is deactivated");
 
@@ -77,7 +94,7 @@ export class AuthService {
     logger.info({ msg: "User logged in", userId: user._id });
 
     return {
-      user: payload,
+      user: buildUserResponse(user),
       accessToken,
       refreshToken,
     };
@@ -91,7 +108,9 @@ export class AuthService {
       throw new UnauthorizedError("Invalid refresh token");
     }
 
-    const user = await userRepo.findById(decoded.id, { includeRefreshToken: true });
+    const user = await userRepo.findById(decoded.id, {
+      includeRefreshToken: true,
+    });
     if (!user || !user.refreshToken) {
       throw new UnauthorizedError("Refresh token revoked");
     }
@@ -101,7 +120,10 @@ export class AuthService {
     if (!isValid) {
       // Potential token reuse — revoke entire family
       await userRepo.invalidateRefreshToken(user._id);
-      logger.warn({ msg: "Refresh token reuse detected — family revoked", userId: user._id });
+      logger.warn({
+        msg: "Refresh token reuse detected — family revoked",
+        userId: user._id,
+      });
       throw new UnauthorizedError("Token reuse detected. Please log in again.");
     }
 
@@ -110,7 +132,11 @@ export class AuthService {
     const newRefreshToken = signRefreshToken({ id: user._id.toString() });
     const hashedRefresh = await bcrypt.hash(newRefreshToken, 10);
 
-    await userRepo.updateRefreshToken(user._id, hashedRefresh, user.refreshTokenFamily);
+    await userRepo.updateRefreshToken(
+      user._id,
+      hashedRefresh,
+      user.refreshTokenFamily,
+    );
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
@@ -119,6 +145,12 @@ export class AuthService {
     await userRepo.invalidateRefreshToken(userId);
     await cacheDel(`user:${userId}`);
     logger.info({ msg: "User logged out", userId });
+  }
+
+  async getMe(userId) {
+    const user = await userRepo.findById(userId);
+    if (!user) throw new NotFoundError("User");
+    return buildUserResponse(user);
   }
 
   async changePassword(userId, dto) {

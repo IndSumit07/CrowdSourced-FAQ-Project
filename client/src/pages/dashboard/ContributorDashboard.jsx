@@ -92,19 +92,50 @@ const ContributorDashboard = () => {
             return (
               <div
                 key={resp._id}
-                className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+                className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${
+                  resp.accepted
+                    ? "border-teal-300 ring-1 ring-teal-200"
+                    : "border-stone-200"
+                }`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
-                      resp.answer
-                        ? "bg-teal-100 text-teal-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {resp.answer ? "Answered" : "Pending Answer"}
-                  </span>
-                  <span className="text-xs text-stone-400 font-bold">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
+                        resp.accepted
+                          ? "bg-teal-100 text-teal-800"
+                          : resp.answer
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {resp.accepted
+                        ? "Accepted ✓"
+                        : resp.answer
+                          ? "Answered"
+                          : "Pending Answer"}
+                    </span>
+                    {resp.accepted && (
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                          />
+                        </svg>
+                        Selected by admin
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-stone-400 font-bold shrink-0">
                     {new Date(resp.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -112,12 +143,35 @@ const ContributorDashboard = () => {
                 <h3 className="text-stone-900 font-bold mb-4">{q.question}</h3>
 
                 {resp.answer ? (
-                  <div className="bg-stone-50 p-4 rounded-xl border border-stone-100">
+                  <div
+                    className={`p-4 rounded-xl border ${resp.accepted ? "bg-teal-50 border-teal-200" : "bg-stone-50 border-stone-100"}`}
+                  >
                     <p className="text-stone-600 text-sm leading-relaxed">
                       {resp.answer}
                     </p>
-                    <div className="mt-2 text-xs font-bold text-[#0D9488]">
-                      Confidence: {resp.confidence}/5
+                    <div className="mt-2 flex items-center gap-3">
+                      <span className="text-xs font-bold text-[#0D9488]">
+                        Confidence: {resp.confidence}/5
+                      </span>
+                      {resp.accepted && (
+                        <span className="text-xs font-bold text-teal-700 flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Admin selected this answer
+                        </span>
+                      )}
                     </div>
                   </div>
                 ) : (

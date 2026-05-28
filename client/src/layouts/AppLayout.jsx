@@ -61,24 +61,24 @@ export const AppLayout = ({ children }) => {
   const items = navItems[user?.role] || navItems.user;
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex">
+    <div className="min-h-screen bg-stone-50 flex">
       {/* ─── Sidebar ─────────────────────────────────────────── */}
-      <aside className="w-60 flex-shrink-0 flex flex-col border-r border-white/8 bg-[#0d1117] fixed h-full z-30">
+      <aside className="w-64 flex-shrink-0 flex flex-col border-r border-stone-200 bg-white fixed h-full z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-white/8">
+        <div className="px-6 py-6 border-b border-stone-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D9488] to-[#0F766E] shadow-sm flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-white text-sm font-display">FAQ Platform</p>
-              <p className="text-xs text-slate-500">AI-Powered</p>
+              <p className="font-bold text-stone-900 text-[15px] font-display tracking-tight leading-tight">QueryCare</p>
+              <p className="text-[11px] font-medium text-stone-500 uppercase tracking-wider">AI-Powered</p>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto scrollbar-thin">
           {items.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -87,62 +87,62 @@ export const AppLayout = ({ children }) => {
                 `nav-link ${isActive ? 'active' : ''}`
               }
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="w-4.5 h-4.5 flex-shrink-0" />
               {label}
             </NavLink>
           ))}
         </nav>
 
         {/* Bottom section */}
-        <div className="border-t border-white/8 p-3 space-y-1">
+        <div className="border-t border-stone-100 p-4 space-y-1.5">
           {/* Socket status */}
-          <div className="flex items-center gap-2 px-3 py-1.5">
+          <div className="flex items-center gap-2 px-3.5 py-2">
             {socketConnected
-              ? <Wifi className="w-3 h-3 text-emerald-400" />
-              : <WifiOff className="w-3 h-3 text-slate-500" />}
-            <span className={`text-xs ${socketConnected ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {socketConnected ? 'Live' : 'Offline'}
+              ? <Wifi className="w-3.5 h-3.5 text-teal-600" />
+              : <WifiOff className="w-3.5 h-3.5 text-stone-400" />}
+            <span className={`text-xs font-semibold ${socketConnected ? 'text-teal-600' : 'text-stone-400'}`}>
+              {socketConnected ? 'Live Connection' : 'Offline Mode'}
             </span>
           </div>
 
           <NavLink to="/notifications" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <Bell className="w-4 h-4" />
+            <Bell className="w-4.5 h-4.5" />
             Notifications
             {unreadCount > 0 && (
-              <span className="ml-auto bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="ml-auto bg-teal-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </NavLink>
 
           <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <User className="w-4 h-4" />
+            <User className="w-4.5 h-4.5" />
             Profile
           </NavLink>
 
-          <button onClick={handleLogout} className="nav-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10">
-            <LogOut className="w-4 h-4" />
+          <button onClick={handleLogout} className="nav-link w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+            <LogOut className="w-4.5 h-4.5" />
             Logout
           </button>
         </div>
 
         {/* User info */}
-        <div className="px-4 pb-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/8">
-            <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center text-sm font-bold text-blue-400">
+        <div className="px-4 pb-6 mt-2">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <div className="w-9 h-9 rounded-full bg-teal-100 border border-teal-200 flex items-center justify-center text-sm font-bold text-teal-700 shadow-sm">
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-white truncate">{user?.name}</p>
-              <p className="text-xs text-slate-500 truncate capitalize">{user?.role}</p>
+              <p className="text-sm font-bold text-stone-900 truncate">{user?.name}</p>
+              <p className="text-[11px] font-semibold text-stone-500 truncate capitalize">{user?.role}</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* ─── Main ────────────────────────────────────────────── */}
-      <main className="flex-1 ml-60 min-h-screen">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+      <main className="flex-1 ml-64 min-h-screen relative">
+        <div className="max-w-6xl mx-auto px-8 py-10">
           {children}
         </div>
       </main>

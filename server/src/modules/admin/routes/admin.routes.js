@@ -19,6 +19,7 @@ const editFaqSchema = z.object({
   answer: z.string().min(20).max(10000).optional(),
   category: z.enum(["internship", "placement", "resume", "dsa", "coding-interview", "career", "general"]).optional(),
   tags: z.array(z.string()).optional(),
+  responseId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(), // ID of the selected contributor response
 });
 
 // Dashboard

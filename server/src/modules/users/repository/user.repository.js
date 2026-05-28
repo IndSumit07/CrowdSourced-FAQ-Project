@@ -52,6 +52,12 @@ export class UserRepository {
     }).lean();
   }
 
+  async incrementReputationAndAccepted(id, amount = 1) {
+    return User.findByIdAndUpdate(id, {
+      $inc: { reputation: amount, totalAccepted: 1 },
+    }).lean();
+  }
+
   async findTopContributors(limit = 10) {
     return User.find({ role: { $in: ["contributor", "admin"] } })
       .sort({ reputation: -1 })
