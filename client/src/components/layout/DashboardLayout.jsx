@@ -91,7 +91,11 @@ const DashboardLayout = () => {
               onClick={() => setIsSidebarOpen((prev) => !prev)}
               aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
-              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {isSidebarOpen ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Menu className="h-4 w-4" />
+              )}
             </button>
             <div className="w-9 h-9 rounded-xl bg-linear-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-sm">
               <svg
