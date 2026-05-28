@@ -38,10 +38,10 @@ const HeroSection = () => {
         </p>
 
         {/* CTA row */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4 w-full">
           <Link
             to="/faqs"
-            className="group inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shadow-sm"
+            className="group inline-flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 text-white rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shadow-sm w-full sm:w-auto"
           >
             Browse Trusted FAQs
             <svg
@@ -60,7 +60,7 @@ const HeroSection = () => {
           </Link>
           <Link
             to="/ask"
-            className="group inline-flex items-center gap-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:border-teal-600 hover:text-teal-600 transition-all duration-200 shadow-sm"
+            className="group inline-flex items-center justify-center gap-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:border-teal-600 hover:text-teal-600 transition-all duration-200 shadow-sm w-full sm:w-auto"
           >
             <svg
               className="w-4 h-4"

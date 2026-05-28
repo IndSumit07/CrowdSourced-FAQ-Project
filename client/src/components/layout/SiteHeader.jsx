@@ -6,7 +6,7 @@ const SiteHeader = () => {
 
   return (
     <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl bg-white/95 backdrop-blur-md border border-stone-200 rounded-full px-5 py-3 md:px-8 md:py-3.5 shadow-sm transition-all duration-300 hover:shadow-md font-home">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl bg-white/95 backdrop-blur-md border border-stone-200 rounded-full px-4 py-2.5 sm:px-5 sm:py-3 md:px-8 md:py-3.5 shadow-sm transition-all duration-300 hover:shadow-md font-home">
         {/* Left Logo Icon */}
         <Link
           to="/"
@@ -48,7 +48,7 @@ const SiteHeader = () => {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
           {!isAuthenticated ? (
             <>
               <Link
@@ -59,7 +59,7 @@ const SiteHeader = () => {
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer shadow-sm"
+                className="px-4 py-2 sm:px-5 sm:py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer shadow-sm"
               >
                 Sign Up
               </Link>
@@ -74,7 +74,7 @@ const SiteHeader = () => {
               </Link>
               <button
                 onClick={logout}
-                className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer shadow-sm"
+                className="px-4 py-2 sm:px-5 sm:py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer shadow-sm"
               >
                 Logout
               </button>

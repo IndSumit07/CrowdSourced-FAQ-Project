@@ -11,6 +11,8 @@ import {
   BookOpen,
   User,
   LogOut,
+  Menu,
+  X,
   ChevronRight,
 } from "lucide-react";
 
@@ -18,6 +20,7 @@ const DashboardLayout = () => {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const [socketConnected, setSocketConnected] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useSocketEvents();
 
@@ -31,6 +34,10 @@ const DashboardLayout = () => {
     const interval = setInterval(checkSocket, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     {
@@ -76,8 +83,16 @@ const DashboardLayout = () => {
     <div className="min-h-screen bg-slate-50 font-dashboard text-slate-900">
       {/* Top Navbar */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/70 z-50">
-        <div className="flex items-center justify-between h-full px-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between h-full px-4 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900 md:hidden"
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
             <div className="w-9 h-9 rounded-xl bg-linear-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-sm">
               <svg
                 className="w-4.5 h-4.5 text-white"
@@ -108,7 +123,7 @@ const DashboardLayout = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/"
               className="hidden md:inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
@@ -148,7 +163,19 @@ const DashboardLayout = () => {
       </header>
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200/70 overflow-y-auto z-40">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 bg-slate-900/30 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="Close sidebar"
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200/70 overflow-y-auto z-50 transform transition-transform duration-200 md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="p-5 flex flex-col h-full">
           {user && (
             <div className="mb-5 pb-5 border-b border-slate-100">
@@ -205,8 +232,8 @@ const DashboardLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 pt-16 min-h-screen">
-        <div className="px-8 py-7">
+      <main className="pt-16 min-h-screen md:ml-64">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>

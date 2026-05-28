@@ -61,7 +61,7 @@ const UserDashboard = () => {
 
   return (
     <div className="w-full">
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">
           My Queries
         </h1>
@@ -95,7 +95,7 @@ const UserDashboard = () => {
         <div className="space-y-8">
           {Object.entries(groupedQueries).map(([topic, items]) => (
             <section key={topic} className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-black text-stone-900 tracking-tight">
                     {topic}
@@ -104,8 +104,8 @@ const UserDashboard = () => {
                     {items.length} queries
                   </p>
                 </div>
-                <div className="h-px flex-1 mx-4 bg-stone-200"></div>
-                <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                <div className="h-px flex-1 bg-stone-200 hidden sm:block"></div>
+                <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full text-[10px] font-extrabold uppercase tracking-wider w-fit">
                   Topic
                 </span>
               </div>
@@ -165,8 +165,8 @@ const UserDashboard = () => {
                         })()}
                     </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
+                    <div className="flex items-center gap-6 flex-wrap sm:flex-nowrap">
+                      <div className="text-center min-w-24">
                         <span className="block text-xl font-black text-stone-900">
                           {q.responseCount || 0}
                         </span>
@@ -180,7 +180,7 @@ const UserDashboard = () => {
                         disabled={["processing", "completed"].includes(
                           q.status,
                         )}
-                        className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-colors border ${
+                        className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-colors border w-full sm:w-auto ${
                           ["processing", "completed"].includes(q.status)
                             ? "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed"
                             : "bg-white text-red-700 border-red-200 hover:bg-red-50"

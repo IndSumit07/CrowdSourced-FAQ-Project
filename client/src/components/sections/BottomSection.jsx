@@ -99,7 +99,7 @@ const BottomSection = () => {
       {/* ── 3-Column Grid ── */}
       <section
         id="values"
-        className="bg-[#f8f7f4] px-4 sm:px-10 py-24 grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-center relative overflow-hidden max-w-350 mx-auto"
+        className="bg-[#f8f7f4] px-4 sm:px-6 lg:px-10 py-16 sm:py-20 lg:py-24 grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-center relative overflow-hidden max-w-350 mx-auto"
       >
         {/* ───────── LEFT COLUMN ───────── */}
         <div className="flex flex-col gap-5 relative">
@@ -196,7 +196,7 @@ const BottomSection = () => {
             </div>
 
             {/* Platform icons row */}
-            <div className="flex gap-3 ml-12">
+            <div className="flex flex-wrap gap-3 ml-0 sm:ml-12">
               {/* Google */}
               <div className="w-10 h-10 border border-stone-200/50 rounded-xl flex items-center justify-center bg-[#FAF6F0]/50 hover:-translate-y-1 transition-transform cursor-pointer">
                 <svg
@@ -265,14 +265,18 @@ const BottomSection = () => {
         {/* ───────── RIGHT COLUMN ───────── */}
         <div className="flex items-stretch text-left">
           {/* Vertical text label */}
-          <div className="flex items-center justify-center pr-4 shrink-0">
+          <div className="hidden lg:flex items-center justify-center pr-4 shrink-0">
             <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap select-none">
               5M+ Answers Served
             </span>
           </div>
 
+          <div className="lg:hidden mb-3 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap">
+            5M+ Answers Served
+          </div>
+
           {/* Vertical divider */}
-          <div className="w-px bg-stone-300 self-stretch mx-3 shrink-0" />
+          <div className="hidden lg:block w-px bg-stone-300 self-stretch mx-3 shrink-0" />
 
           {/* Value Propositions & Premium CTA */}
           <div className="flex flex-col justify-between gap-8 pl-1.5">
