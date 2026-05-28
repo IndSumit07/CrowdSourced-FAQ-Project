@@ -127,7 +127,7 @@ MIN_CONTRIBUTOR_RESPONSES=2
 |---|---|
 | `User` | name, email, password (hashed), role, expertise, reputation, refreshToken, refreshTokenFamily |
 | `FAQ` | title, answer, category, tags, embedding (vector, `select: false`), published, views, upvotes |
-| `Query` | question, category, status, deadline, embedding, creator, acceptedContributors, responseCount |
+| `Query` | question, category, status, deadline, embedding, creator, acceptedContributors, responseCount, resolvedAnswer, resolvedAt |
 | `ContributorResponse` | query, contributor, answer, confidence, skipped, accepted |
 | `Notification` | recipient, type, message, read, metadata(queryId, faqId) |
 
@@ -141,6 +141,7 @@ MIN_CONTRIBUTOR_RESPONSES=2
 | `POST /api/v1/auth/login` | AuthController | Public |
 | `POST /api/v1/auth/refresh` | AuthController | Public |
 | `POST /api/v1/auth/logout` | AuthController | JWT |
+| `GET  /api/v1/auth/me` | AuthController | JWT |
 | `GET  /api/v1/faqs` | FAQController | Public |
 | `GET  /api/v1/faqs/search?q=` | FAQController | Public |
 | `POST /api/v1/faqs/resolve` | FAQController | AI rate limited |
@@ -212,6 +213,13 @@ notificationWorker
 - **Refresh token:** 7d JWT, stored in HttpOnly cookie + hashed in DB
 - **Rotation:** Every refresh call issues new tokens; old hashed token is replaced
 - **Reuse detection:** If stored hash doesn't match → revoke entire family → force re-login
+
+---
+
+## ✅ Admin Resolution + Reputation
+- When an admin publishes a query to FAQ, the selected contributor response is marked `accepted` and the contributor gains **+10 reputation** (`incrementReputationAndAccepted`).
+- The query is updated to `completed` with `resolvedAnswer` and `resolvedAt`.
+- Socket events emitted: `contributor:answer-accepted` (notifies contributor) and `notification:user` (notifies query creator).
 
 ---
 
