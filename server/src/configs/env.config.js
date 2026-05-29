@@ -45,6 +45,7 @@ const envSchema = z.object({
 
   QUERY_DEADLINE_HOURS: z.coerce.number().positive().default(1),
   MIN_CONTRIBUTOR_RESPONSES: z.coerce.number().int().positive().default(2),
+  FLAG_THRESHOLD: z.coerce.number().int().positive().default(5),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX_PUBLIC: z.coerce.number().int().positive().default(100),

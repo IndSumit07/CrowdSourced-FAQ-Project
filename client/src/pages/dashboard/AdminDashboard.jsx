@@ -48,6 +48,14 @@ const AdminDashboard = () => {
     setFinalAnswer(prev => ({ ...prev, [queryId]: ans.answer }));
   };
 
+  const handleUnselectAnswer = (queryId) => {
+    setSelectedResponse(prev => {
+      const next = { ...prev };
+      delete next[queryId];
+      return next;
+    });
+  };
+
   const publishQueryMutation = useMutation({
     mutationFn: ({ id, data }) => adminService.publishQueryToFAQ(id, data),
     onSuccess: () => {
@@ -247,6 +255,13 @@ const AdminDashboard = () => {
                     <p className="text-xs font-bold text-amber-800">
                       The selected contributor will earn <span className="text-amber-600">+10 reputation</span> when you publish this answer.
                     </p>
+                    <button
+                      onClick={() => handleUnselectAnswer(query._id)}
+                      className="ml-auto flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-stone-500 hover:text-red-500 border border-stone-300 hover:border-red-300 rounded-full transition-colors"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      Unselect
+                    </button>
                   </div>
                 )}
 

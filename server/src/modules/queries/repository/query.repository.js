@@ -113,7 +113,11 @@ export class ContributorResponseRepository {
   }
 
   async findByQuery(queryId) {
-    return ContributorResponse.find({ query: queryId, skipped: false })
+    return ContributorResponse.find({
+      query: queryId,
+      skipped: false,
+      answer: { $exists: true, $ne: "" },
+    })
       .populate("contributor", "name expertise reputation")
       .lean();
   }

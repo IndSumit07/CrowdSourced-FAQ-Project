@@ -100,10 +100,10 @@ const QueryCard = ({ q }) => {
     setFlagging(true);
     try {
       const res = await contributorService.flag(queryId);
-      const isFlagged = res.data.flagged;
-      setHasFlagged(isFlagged);
-      updateQuery(queryId, { flagCount: res.data.flagCount });
-      if (isFlagged) {
+      const { flagged, flagCount } = res.data.data;
+      setHasFlagged(flagged);
+      updateQuery(queryId, { flagCount });
+      if (flagged) {
         toast.success("Query flagged. Thank you for helping keep the feed clean.");
       } else {
         toast.success("Flag removed.");

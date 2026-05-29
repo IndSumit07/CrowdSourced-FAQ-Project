@@ -6,12 +6,11 @@ import { getIO } from "../../../configs/socket.config.js";
 import { SOCKET_EVENTS } from "../../realtime/constants/events.js";
 import { logger } from "../../../utils/logger.js";
 import { env } from "../../../configs/env.config.js";
+import { deadlineQueue } from "../../queues/deadline.queue.js";
 
 const queryRepo = new QueryRepository();
 const responseRepo = new ContributorResponseRepository();
 const userRepo = new UserRepository();
-
-const FLAG_THRESHOLD = 5;
 
 export class ContributorService {
   async acceptQuery(queryId, contributorId) {
@@ -160,7 +159,15 @@ export class ContributorService {
       flagCount: newFlagCount,
     });
 
-    if (newFlagCount >= FLAG_THRESHOLD) {
+    if (newFlagCount >= env.FLAG_THRESHOLD) {
+      logger.info({ msg: "Flag threshold reached", queryId, newFlagCount, threshold: env.FLAG_THRESHOLD });
+      if (query.deadlineJobId) {
+        try {
+          await deadlineQueue.remove(query.deadlineJobId);
+        } catch (err) {
+          logger.warn({ msg: "Failed to remove deadline job", err: err.message, jobId: query.deadlineJobId });
+        }
+      }
       await queryRepo.updateStatus(queryId, "rejected");
 
       await Notification.create({
