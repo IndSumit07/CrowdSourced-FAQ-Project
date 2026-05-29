@@ -33,6 +33,7 @@ export const contributorService = {
   answer: (queryId, data) =>
     api.post(`/contributors/queries/${queryId}/answer`, data),
   skip: (queryId) => api.post(`/contributors/queries/${queryId}/skip`),
+  flag: (queryId) => api.post(`/contributors/queries/${queryId}/flag`),
   myResponses: (params) => api.get("/contributors/my-responses", { params }),
 };
 

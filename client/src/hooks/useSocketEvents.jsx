@@ -79,6 +79,15 @@ export const useSocketEvents = () => {
       removeQuery(data.queryId);
     });
 
+    socket.on(SOCKET_EVENTS.QUERY_FLAGGED, (data) => {
+      updateQuery(data.queryId, { flagCount: data.flagCount });
+    });
+
+    socket.on(SOCKET_EVENTS.QUERY_REMOVED, (data) => {
+      removeQuery(data.queryId);
+      toast("⚑ Query removed for receiving too many flags.", { duration: 4000 });
+    });
+
     // ─── FAQ events ───────────────────────────────────────────────
     socket.on(SOCKET_EVENTS.FAQ_PUBLISHED, (data) => {
       toast.success(`📖 New FAQ published: "${data.title?.slice(0, 50)}..."`, {
@@ -160,6 +169,8 @@ export const useSocketEvents = () => {
       socket.off(SOCKET_EVENTS.QUERY_UPDATED);
       socket.off(SOCKET_EVENTS.QUERY_EXPIRED);
       socket.off(SOCKET_EVENTS.QUERY_COMPLETED);
+      socket.off(SOCKET_EVENTS.QUERY_FLAGGED);
+      socket.off(SOCKET_EVENTS.QUERY_REMOVED);
       socket.off(SOCKET_EVENTS.FAQ_PUBLISHED);
       socket.off(SOCKET_EVENTS.FAQ_PENDING_REVIEW);
       socket.off(SOCKET_EVENTS.ADMIN_NOTIFICATION);

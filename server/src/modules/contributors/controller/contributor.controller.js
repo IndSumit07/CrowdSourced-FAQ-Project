@@ -28,4 +28,9 @@ export class ContributorController {
     const responses = await contributorService.getMyResponses(req.user.id, req.query);
     return ApiResponse.success(res, { responses });
   });
+
+  flag = asyncHandler(async (req, res) => {
+    const result = await contributorService.flagQuery(req.params.queryId, req.user.id);
+    return ApiResponse.success(res, result, "Query flagged");
+  });
 }

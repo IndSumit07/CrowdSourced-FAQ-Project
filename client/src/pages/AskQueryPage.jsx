@@ -174,6 +174,12 @@ const AskQueryPage = () => {
         <p className="text-stone-500">
           Get fast, accurate answers from expert contributors.
         </p>
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700" />
+          <p>
+            If none of these answer your question, go ahead and submit — contributors will respond.
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -227,10 +233,6 @@ const AskQueryPage = () => {
               ))}
             </div>
 
-            <p className="text-xs text-stone-400 flex items-start gap-1.5 pt-1">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              If none of these answer your question, go ahead and submit — contributors will respond.
-            </p>
           </div>
         )}
 

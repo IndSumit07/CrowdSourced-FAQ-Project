@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["query_completed", "query_expired", "faq_published", "contributor_accepted", "system"],
+      enum: ["query_completed", "query_expired", "faq_published", "contributor_accepted", "query_flagged", "system"],
       required: true,
     },
     message: {

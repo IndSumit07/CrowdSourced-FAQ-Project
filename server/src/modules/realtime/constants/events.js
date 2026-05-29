@@ -9,6 +9,8 @@ export const SOCKET_EVENTS = Object.freeze({
   QUERY_EXPIRED: "query:expired",
   QUERY_COMPLETED: "query:completed",
   QUERY_ANSWERED: "query:answered",
+  QUERY_FLAGGED: "query:flagged",
+  QUERY_REMOVED: "query:removed",
 
   // Contributor events
   CONTRIBUTOR_ACCEPTED: "contributor:accepted",

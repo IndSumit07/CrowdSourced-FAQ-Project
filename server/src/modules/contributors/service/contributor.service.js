@@ -1,13 +1,17 @@
 import { QueryRepository, ContributorResponseRepository } from "../../queries/repository/query.repository.js";
 import { UserRepository } from "../../users/repository/user.repository.js";
+import { Notification } from "../../notifications/schema/notification.schema.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../../../utils/errors.js";
 import { getIO } from "../../../configs/socket.config.js";
 import { SOCKET_EVENTS } from "../../realtime/constants/events.js";
 import { logger } from "../../../utils/logger.js";
+import { env } from "../../../configs/env.config.js";
 
 const queryRepo = new QueryRepository();
 const responseRepo = new ContributorResponseRepository();
 const userRepo = new UserRepository();
+
+const FLAG_THRESHOLD = 5;
 
 export class ContributorService {
   async acceptQuery(queryId, contributorId) {
@@ -111,6 +115,61 @@ export class ContributorService {
     }
 
     return { skipped: true };
+  }
+
+  async flagQuery(queryId, contributorId) {
+    const query = await queryRepo.findById(queryId);
+    if (!query) throw new NotFoundError("Query");
+
+    if (["completed", "rejected", "expired", "processing"].includes(query.status)) {
+      throw new BadRequestError("This query can no longer be flagged");
+    }
+
+    if (query.creator.toString() === contributorId) {
+      throw new ForbiddenError("Cannot flag your own query");
+    }
+
+    const alreadyFlagged = (query.flaggedBy || []).some(
+      (id) => id.toString() === contributorId
+    );
+    if (alreadyFlagged) {
+      throw new BadRequestError("You have already flagged this query");
+    }
+
+    const updated = await queryRepo.updateById(queryId, {
+      $addToSet: { flaggedBy: contributorId },
+      $inc: { flagCount: 1 },
+    });
+
+    const newFlagCount = (updated.flagCount || 0) + 1;
+    const io = getIO();
+    io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_FLAGGED, {
+      queryId,
+      flagCount: newFlagCount,
+    });
+
+    if (newFlagCount >= FLAG_THRESHOLD) {
+      await queryRepo.updateStatus(queryId, "rejected");
+
+      await Notification.create({
+        recipient: query.creator,
+        type: "query_flagged",
+        message: "Your query was flagged by users as irrelevant and has been removed.",
+        metadata: { queryId },
+      });
+
+      io.to(`user:${query.creator}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+        type: "query_flagged",
+        message: "Your query was flagged by users as irrelevant and has been removed.",
+        queryId,
+      });
+
+      io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_REMOVED, { queryId });
+
+      logger.info({ msg: "Query removed due to flag threshold", queryId, flagCount: newFlagCount });
+    }
+
+    return { flagged: true, flagCount: newFlagCount };
   }
 
   async getMyResponses(contributorId, params) {

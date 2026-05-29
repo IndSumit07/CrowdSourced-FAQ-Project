@@ -73,6 +73,14 @@ const querySchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    flaggedBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    flagCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

@@ -73,6 +73,8 @@ export const SOCKET_EVENTS = {
   QUERY_UPDATED: "query:updated",
   QUERY_EXPIRED: "query:expired",
   QUERY_COMPLETED: "query:completed",
+  QUERY_FLAGGED: "query:flagged",
+  QUERY_REMOVED: "query:removed",
   CONTRIBUTOR_ACCEPTED: "contributor:accepted",
   NEW_ANSWER: "contributor:answer",
   CONTRIBUTOR_ANSWER_ACCEPTED: "contributor:answer-accepted",

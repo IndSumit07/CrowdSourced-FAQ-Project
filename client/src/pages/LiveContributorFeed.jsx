@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useFeedStore } from "../store/feedStore";
 import { queryService, contributorService } from "../services/api";
 import { CountdownTimer } from "../components/ui/CountdownTimer";
-import { CheckCircle, ChevronDown, ChevronUp, Send, SkipForward } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Flag, Send, SkipForward } from "lucide-react";
 import toast from "react-hot-toast";
 
 // ─── Per-card state machine ───────────────────────────────────────────────────
@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 
 const QueryCard = ({ q }) => {
   const { updateQuery } = useFeedStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const queryId = q._id || q.queryId;
 
@@ -22,6 +22,14 @@ const QueryCard = ({ q }) => {
   const [answer, setAnswer] = useState("");
   const [confidence, setConfidence] = useState(3);
   const [submitting, setSubmitting] = useState(false);
+  const [hasFlagged, setHasFlagged] = useState(false);
+  const [flagging, setFlagging] = useState(false);
+
+  useEffect(() => {
+    if (user && q.flaggedBy?.includes(user.id)) {
+      setHasFlagged(true);
+    }
+  }, [user, q.flaggedBy]);
 
   const handleAccept = async () => {
     if (!isAuthenticated) {
@@ -83,6 +91,26 @@ const QueryCard = ({ q }) => {
     }
   };
 
+  const handleFlag = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to flag queries.");
+      navigate("/login", { state: { redirectTo: "/feed" } });
+      return;
+    }
+    if (hasFlagged) return;
+    setFlagging(true);
+    try {
+      const res = await contributorService.flag(queryId);
+      setHasFlagged(true);
+      updateQuery(queryId, { flagCount: res.data.flagCount });
+      toast.success("Query flagged. Thank you for helping keep the feed clean.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to flag query");
+    } finally {
+      setFlagging(false);
+    }
+  };
+
   const statusBadge = {
     submitted: (
       <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">
@@ -131,6 +159,11 @@ const QueryCard = ({ q }) => {
           <div className="flex items-center gap-2">
             {statusBadge[phase] || null}
             {q.deadline && <CountdownTimer deadline={q.deadline} compact />}
+            {q.flagCount > 0 && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold">
+                <Flag className="w-3 h-3" /> {q.flagCount}
+              </span>
+            )}
           </div>
         </div>
 
@@ -152,6 +185,18 @@ const QueryCard = ({ q }) => {
                   className="px-4 py-2 border border-stone-300 text-stone-500 hover:text-stone-700 hover:border-stone-400 rounded-xl text-sm font-bold transition-colors"
                 >
                   Skip
+                </button>
+                <button
+                  onClick={handleFlag}
+                  disabled={hasFlagged || flagging}
+                  className={`px-4 py-2 border rounded-xl text-sm font-bold transition-colors ${
+                    hasFlagged
+                      ? "border-red-200 text-red-400 bg-red-50 cursor-default"
+                      : "border-red-300 text-red-600 hover:text-red-700 hover:border-red-400"
+                  }`}
+                  title="Flag this query as irrelevant"
+                >
+                  <Flag className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleAccept}

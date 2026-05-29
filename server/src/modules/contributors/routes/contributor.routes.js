@@ -21,6 +21,7 @@ router.use(authenticate);
 router.post("/queries/:queryId/accept", authLimiter, validateParams(queryIdSchema), contributorController.accept);
 router.post("/queries/:queryId/answer", authLimiter, validateParams(queryIdSchema), validateBody(answerSchema), contributorController.answer);
 router.post("/queries/:queryId/skip", validateParams(queryIdSchema), contributorController.skip);
+router.post("/queries/:queryId/flag", authLimiter, validateParams(queryIdSchema), contributorController.flag);
 router.get("/my-responses", contributorController.myResponses);
 
 export default router;
