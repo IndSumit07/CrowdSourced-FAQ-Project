@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminService } from '../../services/api';
+import { adminService, sectionService } from '../../services/api';
 import { StatsGridSkeleton, PendingQueriesSkeleton, PendingFAQsSkeleton } from '../../components/skeleton-loaders';
 import toast from 'react-hot-toast';
-import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle, Bot } from 'lucide-react';
+import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle, Bot, Plus, Folder } from 'lucide-react';
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
@@ -41,6 +41,30 @@ const AdminDashboard = () => {
   const [selectedResponse, setSelectedResponse] = useState({});
   // Track edited final answer text per query
   const [finalAnswer, setFinalAnswer] = useState({});
+  // Track selected section per query
+  const [selectedSection, setSelectedSection] = useState({});
+  // Track "create new section" input per query
+  const [newSectionName, setNewSectionName] = useState({});
+  // Track whether to show new section input per query
+  const [showNewSectionInput, setShowNewSectionInput] = useState({});
+
+  const { data: sections } = useQuery({
+    queryKey: ['sections'],
+    queryFn: async () => {
+      const res = await sectionService.getAll();
+      return res.data.data.sections || [];
+    },
+  });
+
+  const createSectionMutation = useMutation({
+    mutationFn: (title) => sectionService.create({ title }),
+    onSuccess: (res) => {
+      const section = res.data.data.section;
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
+      toast.success(`Section "${section.title}" created`);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to create section'),
+  });
 
   const handleSelectAnswer = (queryId, ans) => {
     setSelectedResponse(prev => ({ ...prev, [queryId]: { id: ans._id, answer: ans.answer } }));
@@ -64,6 +88,24 @@ const AdminDashboard = () => {
   const handleSelectAiAnswer = (queryId, aiAnswer) => {
     setSelectedResponse(prev => ({ ...prev, [queryId]: { id: null, answer: aiAnswer } }));
     setFinalAnswer(prev => ({ ...prev, [queryId]: aiAnswer }));
+  };
+
+  const handleSelectSection = (queryId, sectionId) => {
+    setSelectedSection(prev => ({ ...prev, [queryId]: sectionId }));
+    setShowNewSectionInput(prev => ({ ...prev, [queryId]: false }));
+  };
+
+  const handleCreateNewSection = (queryId) => {
+    const name = newSectionName[queryId]?.trim();
+    if (!name) return;
+    createSectionMutation.mutate(name, {
+      onSuccess: (res) => {
+        const section = res.data.data.section;
+        setSelectedSection(prev => ({ ...prev, [queryId]: section._id }));
+        setNewSectionName(prev => { const n = { ...prev }; delete n[queryId]; return n; });
+        setShowNewSectionInput(prev => ({ ...prev, [queryId]: false }));
+      },
+    });
   };
 
   const publishQueryMutation = useMutation({
@@ -348,16 +390,79 @@ const AdminDashboard = () => {
                   />
                 </div>
 
+                {/* Section Selector */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <Folder className="h-4 w-4 text-stone-400" />
+                    Section
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">(where this FAQ will appear)</span>
+                  </h4>
+
+                  {/* Show toggle for existing vs new section input */}
+                  {!showNewSectionInput[query._id] ? (
+                    <div className="flex gap-2">
+                      <select
+                        className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                        value={selectedSection[query._id] || ""}
+                        onChange={(e) => handleSelectSection(query._id, e.target.value || null)}
+                      >
+                        <option value="">— No section —</option>
+                        {sections?.map((s) => (
+                          <option key={s._id} value={s._id}>{s.title}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => setShowNewSectionInput(prev => ({ ...prev, [query._id]: true }))}
+                        className="flex items-center gap-1.5 px-4 py-3 border border-stone-300 hover:border-teal-400 text-stone-600 hover:text-teal-600 rounded-xl text-sm font-bold transition-colors"
+                        title="Create new section"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter section title..."
+                        className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                        value={newSectionName[query._id] || ""}
+                        onChange={(e) => setNewSectionName(prev => ({ ...prev, [query._id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleCreateNewSection(query._id);
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => handleCreateNewSection(query._id)}
+                        disabled={createSectionMutation.isPending}
+                        className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-colors"
+                      >
+                        {createSectionMutation.isPending ? "Creating..." : "Add"}
+                      </button>
+                      <button
+                        onClick={() => setShowNewSectionInput(prev => ({ ...prev, [query._id]: false }))}
+                        className="px-3 py-3 border border-stone-300 text-stone-500 hover:text-red-500 hover:border-red-300 rounded-xl text-sm font-bold transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-3 justify-end items-center">
                   {!currentAnswer?.trim() && (
                     <p className="text-xs text-stone-400 mr-auto">Select or write an answer to publish</p>
                   )}
-                  <button 
+                  <button
                     onClick={() => publishQueryMutation.mutate({
                       id: query._id,
                       data: {
                         answer: currentAnswer,
                         responseId: sel?.id ?? undefined,
+                        sectionId: selectedSection[query._id] || null,
                       }
                     })}
                     disabled={publishQueryMutation.isPending || !currentAnswer?.trim()}

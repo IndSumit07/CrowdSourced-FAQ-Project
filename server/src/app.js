@@ -15,6 +15,7 @@ import {
 // Routes
 import authRoutes from "./modules/auth/routes/auth.routes.js";
 import faqRoutes from "./modules/faq/routes/faq.routes.js";
+import sectionRoutes from "./modules/faq/routes/section.routes.js";
 import queryRoutes from "./modules/queries/routes/query.routes.js";
 import contributorRoutes from "./modules/contributors/routes/contributor.routes.js";
 import adminRoutes from "./modules/admin/routes/admin.routes.js";
@@ -86,6 +87,7 @@ const API_PREFIX = "/api/v1";
 
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/faqs`, faqRoutes);
+app.use(`${API_PREFIX}/sections`, sectionRoutes);
 app.use(`${API_PREFIX}/queries`, queryRoutes);
 app.use(`${API_PREFIX}/contributors`, contributorRoutes);
 app.use(`${API_PREFIX}/admin`, adminRoutes);

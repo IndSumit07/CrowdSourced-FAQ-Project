@@ -36,7 +36,7 @@ export class AdminService {
     return { queries: queriesWithAnswers, total };
   }
 
-  async publishQueryToFAQ(queryId, adminId, { answer, category, tags, responseId }) {
+  async publishQueryToFAQ(queryId, adminId, { answer, category, tags, responseId, sectionId }) {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
     if (query.status !== "admin-review") throw new BadRequestError("Query is not pending review");
@@ -74,6 +74,7 @@ export class AdminService {
       published: true,
       aiGenerated: aiSummaryUsed,
       sourceQuery: query._id,
+      section: sectionId || null,
       createdBy: query.creator._id || query.creator,
       publishedBy: adminId,
       publishedAt: new Date(),

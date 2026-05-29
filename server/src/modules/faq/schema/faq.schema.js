@@ -17,11 +17,16 @@ const faqSchema = new mongoose.Schema(
       minlength: [20, "Answer must be at least 20 characters"],
       maxlength: [10000, "Answer cannot exceed 10000 characters"],
     },
-    category: {
+category: {
       type: String,
-      required: true,
       enum: ["internship", "placement", "resume", "dsa", "coding-interview", "career", "general"],
       default: "general",
+      index: true,
+    },
+    section: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Section",
+      default: null,
     },
     tags: {
       type: [String],

@@ -54,6 +54,11 @@ export const adminService = {
   deactivateUser: (userId) => api.delete(`/admin/users/${userId}`),
 };
 
+export const sectionService = {
+  getAll: () => api.get("/sections"),
+  create: (data) => api.post("/sections", data),
+};
+
 export const notificationService = {
   getAll: (params) => api.get("/notifications", { params }),
   markAllRead: () => api.post("/notifications/read-all"),

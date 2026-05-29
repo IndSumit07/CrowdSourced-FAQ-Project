@@ -6,6 +6,7 @@ import { connectDB } from "./src/configs/mongodb.config.js";
 import { redisClient, bullMQRedisConnection } from "./src/configs/redis.config.js";
 import { initSocketIO } from "./src/configs/socket.config.js";
 import { logger } from "./src/utils/logger.js";
+import { SectionService } from "./src/modules/faq/service/section.service.js";
 
 // ─── Import workers to register them ──────────────────────────────────────────
 import "./src/modules/queues/workers.js";
@@ -55,6 +56,10 @@ process.on("unhandledRejection", (reason) => {
 const bootstrap = async () => {
   try {
     await connectDB();
+
+    // Seed sections from faqs.json
+    const sectionService = new SectionService();
+    await sectionService.seedFromJson();
 
     // Validate Upstash Redis connection (non-fatal — Upstash reconnects automatically)
     try {
