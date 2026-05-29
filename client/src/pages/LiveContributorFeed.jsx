@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useFeedStore } from "../store/feedStore";
 import { queryService, contributorService } from "../services/api";
 import { CountdownTimer } from "../components/ui/CountdownTimer";
-import { CheckCircle, ChevronDown, ChevronUp, Flag, Send, SkipForward } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Flag, FlagOff, Send, SkipForward } from "lucide-react";
 import toast from "react-hot-toast";
 
 // ─── Per-card state machine ───────────────────────────────────────────────────
@@ -97,15 +97,19 @@ const QueryCard = ({ q }) => {
       navigate("/login", { state: { redirectTo: "/feed" } });
       return;
     }
-    if (hasFlagged) return;
     setFlagging(true);
     try {
       const res = await contributorService.flag(queryId);
-      setHasFlagged(true);
+      const isFlagged = res.data.flagged;
+      setHasFlagged(isFlagged);
       updateQuery(queryId, { flagCount: res.data.flagCount });
-      toast.success("Query flagged. Thank you for helping keep the feed clean.");
+      if (isFlagged) {
+        toast.success("Query flagged. Thank you for helping keep the feed clean.");
+      } else {
+        toast.success("Flag removed.");
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to flag query");
+      toast.error(err.response?.data?.message || "Failed to update flag");
     } finally {
       setFlagging(false);
     }
@@ -188,15 +192,15 @@ const QueryCard = ({ q }) => {
                 </button>
                 <button
                   onClick={handleFlag}
-                  disabled={hasFlagged || flagging}
+                  disabled={flagging}
                   className={`px-4 py-2 border rounded-xl text-sm font-bold transition-colors ${
                     hasFlagged
-                      ? "border-red-200 text-red-400 bg-red-50 cursor-default"
+                      ? "border-red-400 text-red-600 bg-red-100 hover:bg-red-50"
                       : "border-red-300 text-red-600 hover:text-red-700 hover:border-red-400"
                   }`}
-                  title="Flag this query as irrelevant"
+                  title={hasFlagged ? "Remove flag" : "Flag as irrelevant"}
                 >
-                  <Flag className="w-4 h-4" />
+                  {hasFlagged ? <FlagOff className="w-4 h-4" /> : <Flag className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={handleAccept}

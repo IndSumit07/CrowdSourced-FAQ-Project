@@ -132,8 +132,21 @@ export class ContributorService {
     const alreadyFlagged = (query.flaggedBy || []).some(
       (id) => id.toString() === contributorId
     );
+
+    let newFlagCount;
+    const io = getIO();
+
     if (alreadyFlagged) {
-      throw new BadRequestError("You have already flagged this query");
+      newFlagCount = Math.max(0, (query.flagCount || 1) - 1);
+      await queryRepo.updateById(queryId, {
+        $pull: { flaggedBy: contributorId },
+        $set: { flagCount: newFlagCount },
+      });
+      io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_FLAGGED, {
+        queryId,
+        flagCount: newFlagCount,
+      });
+      return { flagged: false, flagCount: newFlagCount };
     }
 
     const updated = await queryRepo.updateById(queryId, {
@@ -141,8 +154,7 @@ export class ContributorService {
       $inc: { flagCount: 1 },
     });
 
-    const newFlagCount = (updated.flagCount || 0) + 1;
-    const io = getIO();
+    newFlagCount = (updated.flagCount || 0);
     io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_FLAGGED, {
       queryId,
       flagCount: newFlagCount,
