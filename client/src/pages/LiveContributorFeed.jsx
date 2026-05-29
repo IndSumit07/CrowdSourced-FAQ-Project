@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useFeedStore } from "../store/feedStore";
 import { queryService, contributorService } from "../services/api";
 import { CountdownTimer } from "../components/ui/CountdownTimer";
-import { CheckCircle, ChevronDown, ChevronUp, Flag, FlagOff, Send, SkipForward } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Flag, Send, SkipForward } from "lucide-react";
 import toast from "react-hot-toast";
 
 // ─── Per-card state machine ───────────────────────────────────────────────────
@@ -24,12 +24,17 @@ const QueryCard = ({ q }) => {
   const [submitting, setSubmitting] = useState(false);
   const [hasFlagged, setHasFlagged] = useState(false);
   const [flagging, setFlagging] = useState(false);
+  const [userAction, setUserAction] = useState("none"); // "none" | "flagged" | "skipped" | "accepted" | "submitted"
 
   useEffect(() => {
-    if (user && q.flaggedBy?.includes(user.id)) {
+    if (!user) return;
+    if (q.flaggedBy?.includes(user.id)) {
       setHasFlagged(true);
+      setUserAction("flagged");
+    } else if (q.acceptedContributors?.includes(user.id)) {
+      setUserAction("accepted");
     }
-  }, [user, q.flaggedBy]);
+  }, [user, q.flaggedBy, q.acceptedContributors]);
 
   const handleAccept = async () => {
     if (!isAuthenticated) {
@@ -41,6 +46,7 @@ const QueryCard = ({ q }) => {
       await contributorService.accept(queryId);
       setPhase("accepted");
       setExpanded(true);
+      setUserAction("accepted");
       toast.success("Query accepted! Submit your answer before the deadline.");
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to accept query";
@@ -48,6 +54,7 @@ const QueryCard = ({ q }) => {
       if (msg.toLowerCase().includes("already")) {
         setPhase("accepted");
         setExpanded(true);
+        setUserAction("accepted");
       } else {
         toast.error(msg);
       }
@@ -65,6 +72,7 @@ const QueryCard = ({ q }) => {
       await contributorService.answer(queryId, { answer: answer.trim(), confidence });
       setPhase("submitted");
       setExpanded(false);
+      setUserAction("submitted");
       // Optimistically bump the local counter
       updateQuery(queryId, { responseCount: (q.responseCount || 0) + 1 });
       toast.success("Answer submitted! It will be considered when the deadline passes.");
@@ -85,6 +93,7 @@ const QueryCard = ({ q }) => {
       await contributorService.skip(queryId);
       setPhase("skipped");
       setExpanded(false);
+      setUserAction("skipped");
       toast("Query skipped.", { icon: "↩️" });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to skip");
@@ -103,6 +112,7 @@ const QueryCard = ({ q }) => {
       const { flagged, flagCount } = res.data.data;
       setHasFlagged(flagged);
       updateQuery(queryId, { flagCount });
+      setUserAction(flagged ? "flagged" : "none");
       if (flagged) {
         toast.success("Query flagged. Thank you for helping keep the feed clean.");
       } else {
@@ -131,6 +141,11 @@ const QueryCard = ({ q }) => {
         ✍️ In Progress
       </span>
     ),
+    flagged: (
+      <span className="flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold">
+        <Flag className="w-3.5 h-3.5" /> Flagged
+      </span>
+    ),
   };
 
   return (
@@ -140,6 +155,8 @@ const QueryCard = ({ q }) => {
           ? "border-emerald-200 bg-emerald-50/30"
           : phase === "skipped"
           ? "border-stone-200 opacity-60"
+          : userAction === "flagged"
+          ? "border-red-300 bg-red-50/20"
           : "border-stone-200"
       }`}
     >
@@ -150,6 +167,8 @@ const QueryCard = ({ q }) => {
             ? "bg-emerald-500"
             : phase === "accepted"
             ? "bg-amber-500"
+            : userAction === "flagged"
+            ? "bg-red-500"
             : "bg-[#0D9488]"
         }`}
       />
@@ -161,9 +180,11 @@ const QueryCard = ({ q }) => {
             {q.category || "General"}
           </span>
           <div className="flex items-center gap-2">
-            {statusBadge[phase] || null}
+            {userAction !== "none" && userAction !== "accepted"
+              ? statusBadge[userAction]
+              : (phase === "accepted" ? statusBadge.accepted : null)}
             {q.deadline && <CountdownTimer deadline={q.deadline} compact />}
-            {q.flagCount > 0 && (
+            {q.flagCount > 0 && userAction !== "flagged" && (
               <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold">
                 <Flag className="w-3 h-3" /> {q.flagCount}
               </span>
@@ -182,7 +203,7 @@ const QueryCard = ({ q }) => {
 
           {/* Action buttons */}
           <div className="flex gap-2">
-            {phase === "idle" && (
+            {phase === "idle" && userAction === "none" && (
               <>
                 <button
                   onClick={handleSkip}
@@ -193,14 +214,10 @@ const QueryCard = ({ q }) => {
                 <button
                   onClick={handleFlag}
                   disabled={flagging}
-                  className={`px-4 py-2 border rounded-xl text-sm font-bold transition-colors ${
-                    hasFlagged
-                      ? "border-red-400 text-red-600 bg-red-100 hover:bg-red-50"
-                      : "border-red-300 text-red-600 hover:text-red-700 hover:border-red-400"
-                  }`}
-                  title={hasFlagged ? "Remove flag" : "Flag as irrelevant"}
+                  className="px-4 py-2 border border-red-300 text-red-600 hover:text-red-700 hover:border-red-400 rounded-xl text-sm font-bold transition-colors"
+                  title="Flag as irrelevant"
                 >
-                  {hasFlagged ? <FlagOff className="w-4 h-4" /> : <Flag className="w-4 h-4" />}
+                  <Flag className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleAccept}
@@ -231,6 +248,12 @@ const QueryCard = ({ q }) => {
             {phase === "submitted" && (
               <span className="text-xs text-emerald-600 font-bold">
                 Waiting for deadline to pick best answer
+              </span>
+            )}
+
+            {phase === "idle" && userAction !== "none" && userAction !== "accepted" && (
+              <span className="text-xs text-stone-400 font-bold">
+                {userAction === "flagged" ? "You flagged this query" : "You skipped this query"}
               </span>
             )}
           </div>
