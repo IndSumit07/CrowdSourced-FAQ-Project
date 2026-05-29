@@ -26,11 +26,14 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
   AI_PROVIDER: z
-    .enum(["gemini", "openai", "bedrock", "jina"])
+    .enum(["gemini", "openai", "bedrock", "jina", "openrouter"])
     .default("gemini"),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_EMBEDDING_MODEL: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_BASE_URL: z.string().optional(),
+  OPENROUTER_CHAT_MODEL: z.string().optional(),
   BEDROCK_REGION: z.string().optional(),
   BEDROCK_EMBEDDING_MODEL: z.string().optional(),
   AWS_REGION: z.string().optional(),

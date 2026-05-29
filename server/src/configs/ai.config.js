@@ -26,6 +26,13 @@ export const aiConfig = Object.freeze({
     embeddingModel: env.JINA_EMBEDDING_MODEL || "jina-embeddings-v3",
     baseUrl: env.JINA_BASE_URL || "https://api.jina.ai/v1",
   },
+  openrouter: {
+    apiKey: env.OPENROUTER_API_KEY,
+    chatModel: env.OPENROUTER_CHAT_MODEL || "openrouter/auto",
+    baseUrl: env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
+    maxOutputTokens: 2048,
+    temperature: 0.3,
+  },
   vectorSearch: {
     indexName: env.VECTOR_SEARCH_INDEX,
     dimensions: env.EMBEDDING_DIMENSIONS,

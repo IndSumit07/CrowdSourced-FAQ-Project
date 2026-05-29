@@ -1,4 +1,5 @@
 import { getAIProvider } from "../providers/provider.factory.js";
+import { JinaProvider } from "../providers/jina.provider.js";
 import { aiConfig } from "../../../configs/ai.config.js";
 import { cacheGet, cacheSet } from "../../../utils/cache.js";
 import { logger } from "../../../utils/logger.js";
@@ -9,9 +10,21 @@ import { logger } from "../../../utils/logger.js";
  */
 export class EmbeddingService {
   #provider;
+  #embeddingProvider;
 
   constructor() {
     this.#provider = getAIProvider();
+    const mainProviderName = aiConfig.provider;
+    const needsEmbeddingFallback = mainProviderName === "openrouter" || mainProviderName === "bedrock";
+    const hasJinaKey = Boolean(aiConfig.jina?.apiKey);
+    if (needsEmbeddingFallback && hasJinaKey) {
+      this.#embeddingProvider = new JinaProvider();
+    }
+  }
+
+  async #getEmbeddingProvider() {
+    if (this.#embeddingProvider) return this.#embeddingProvider;
+    return this.#provider;
   }
 
   /**
@@ -36,7 +49,8 @@ export class EmbeddingService {
       return cached;
     }
 
-    const embedding = await this.#provider.generateEmbedding(normalized);
+    const embeddingProvider = await this.#getEmbeddingProvider();
+    const embedding = await embeddingProvider.generateEmbedding(normalized);
     await cacheSet(cacheKey, embedding, 86400); // Cache 24h
     return embedding;
   }

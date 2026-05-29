@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '../../services/api';
 import { StatsGridSkeleton, PendingQueriesSkeleton, PendingFAQsSkeleton } from '../../components/skeleton-loaders';
 import toast from 'react-hot-toast';
-import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle, Bot } from 'lucide-react';
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
@@ -54,6 +54,16 @@ const AdminDashboard = () => {
       delete next[queryId];
       return next;
     });
+    setFinalAnswer(prev => {
+      const next = { ...prev };
+      delete next[queryId];
+      return next;
+    });
+  };
+
+  const handleSelectAiAnswer = (queryId, aiAnswer) => {
+    setSelectedResponse(prev => ({ ...prev, [queryId]: { id: null, answer: aiAnswer } }));
+    setFinalAnswer(prev => ({ ...prev, [queryId]: aiAnswer }));
   };
 
   const publishQueryMutation = useMutation({
@@ -170,7 +180,49 @@ const AdminDashboard = () => {
                 </div>
                 
                 <h3 className="text-xl font-bold text-stone-900 mb-5 font-display tracking-tight leading-snug">{query.question}</h3>
-                
+
+                {/* AI Generated Answer */}
+                {query.aiSynthesizedAnswer && (
+                  <div className="space-y-4 mb-6">
+                    <h4 className="text-sm font-bold text-stone-700 flex items-center gap-2 uppercase tracking-wider">
+                      <Bot className="h-4 w-4 text-purple-400" />
+                      AI Summary (No reputation awarded)
+                    </h4>
+                    <div
+                      onClick={() => handleSelectAiAnswer(query._id, query.aiSynthesizedAnswer)}
+                      className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                        sel?.id === null
+                          ? 'border-purple-500 bg-purple-50 shadow-sm'
+                          : 'border-purple-200 bg-purple-50/50 hover:border-purple-400'
+                      }`}
+                    >
+                      {sel?.id === null && (
+                        <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Selected
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                          AI
+                        </div>
+                        <span className="text-xs font-bold text-purple-700">AI Generated</span>
+                        <span className="ml-auto text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                          Synthesized
+                        </span>
+                      </div>
+                      <p className="text-stone-700 text-sm leading-relaxed">{query.aiSynthesizedAnswer}</p>
+                      {sel?.id !== null && (
+                        <p className="text-[10px] text-purple-600 font-bold mt-2 uppercase tracking-wider">
+                          Click to select this AI answer
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Contributor Answers */}
                 <div className="space-y-4 mb-6">
                   <h4 className="text-sm font-bold text-stone-700 flex items-center gap-2 uppercase tracking-wider">
@@ -247,13 +299,28 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Reputation reward notice */}
-                {sel && (
+                {sel && sel.id !== null && (
                   <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                     <p className="text-xs font-bold text-amber-800">
                       The selected contributor will earn <span className="text-amber-600">+10 reputation</span> when you publish this answer.
+                    </p>
+                    <button
+                      onClick={() => handleUnselectAnswer(query._id)}
+                      className="ml-auto flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-stone-500 hover:text-red-500 border border-stone-300 hover:border-red-300 rounded-full transition-colors"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      Unselect
+                    </button>
+                  </div>
+                )}
+                {sel && sel.id === null && (
+                  <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl">
+                    <Bot className="h-4 w-4 text-purple-500 shrink-0" />
+                    <p className="text-xs font-bold text-purple-800">
+                      AI answer selected — no reputation will be awarded to any contributor.
                     </p>
                     <button
                       onClick={() => handleUnselectAnswer(query._id)}
@@ -290,7 +357,7 @@ const AdminDashboard = () => {
                       id: query._id,
                       data: {
                         answer: currentAnswer,
-                        responseId: sel?.id || undefined,
+                        responseId: sel?.id ?? undefined,
                       }
                     })}
                     disabled={publishQueryMutation.isPending || !currentAnswer?.trim()}

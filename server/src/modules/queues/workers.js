@@ -48,16 +48,27 @@ export const deadlineWorker = new Worker(
     }
 
     const responses = await responseRepo.findByQuery(queryId);
+    const answers = responses.map((r) => r.answer).filter(Boolean);
 
-    // All expired queries now go to manual admin review
-    await queryRepo.updateStatus(queryId, "admin-review");
+    let aiSynthesizedAnswer = null;
+    if (answers.length > 0) {
+      try {
+        aiSynthesizedAnswer = await aiValidationService.summarizeAnswers(
+          query.question,
+          answers,
+        );
+      } catch (err) {
+        logger.warn({ msg: "AI summarization failed", queryId, err: err.message });
+      }
+    }
+
+    await queryRepo.updateById(queryId, {
+      status: "admin-review",
+      aiSynthesizedAnswer,
+    });
 
     try {
       const io = getIO();
-      io.emit(SOCKET_EVENTS.QUERY_EXPIRED, {
-        queryId,
-        question: query.question,
-      });
       io.to(`user:${query.creator}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
         type: "query_expired",
         message: "Your query expired and is pending admin review.",
@@ -67,6 +78,8 @@ export const deadlineWorker = new Worker(
         message: `Query expired and is ready for review: "${query.question}"`,
         type: "query_review",
         queryId,
+        aiSynthesizedAnswer,
+        responseCount: answers.length,
       });
     } catch (e) {
       logger.warn({ msg: "Could not emit expiry event", err: e.message });
@@ -75,7 +88,8 @@ export const deadlineWorker = new Worker(
     logger.info({
       msg: "Deadline processed, pending admin review",
       queryId,
-      responseCount: responses.length,
+      responseCount: answers.length,
+      hasAiSummary: !!aiSynthesizedAnswer,
     });
   },
   {

@@ -3,6 +3,7 @@ import { GeminiProvider } from "./gemini.provider.js";
 import { OpenAIProvider } from "./openai.provider.js";
 import { BedrockProvider } from "./bedrock.provider.js";
 import { JinaProvider } from "./jina.provider.js";
+import { OpenRouterProvider } from "./openrouter.provider.js";
 import { logger } from "../../../utils/logger.js";
 
 let _provider = null;
@@ -29,9 +30,12 @@ export const getAIProvider = () => {
     case "jina":
       _provider = new JinaProvider();
       break;
+    case "openrouter":
+      _provider = new OpenRouterProvider();
+      break;
     default:
       throw new Error(
-        `Unknown AI provider: ${providerName}. Use 'gemini', 'openai', 'bedrock', or 'jina'.`,
+        `Unknown AI provider: ${providerName}. Use 'gemini', 'openai', 'bedrock', 'jina', or 'openrouter'.`,
       );
   }
 

@@ -59,6 +59,8 @@ export class AdminService {
       await userRepo.incrementReputationAndAccepted(acceptedContributorId, 10);
     }
 
+    const aiSummaryUsed = responseId === null && !selectedResponse;
+
     // Generate embedding
     const embedding = await embeddingService.embed(query.question);
 
@@ -70,7 +72,7 @@ export class AdminService {
       tags: tags || [],
       embedding,
       published: true,
-      aiGenerated: false,
+      aiGenerated: aiSummaryUsed,
       sourceQuery: query._id,
       createdBy: query.creator._id || query.creator,
       publishedBy: adminId,
@@ -84,6 +86,7 @@ export class AdminService {
       faqGenerated: faq._id,
       resolvedAnswer: answer,
       resolvedAt,
+      aiSummaryUsed,
     });
 
     // Notify the query creator via realtime socket

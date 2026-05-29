@@ -73,6 +73,14 @@ const querySchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    aiSynthesizedAnswer: {
+      type: String,
+      default: null,
+    },
+    aiSummaryUsed: {
+      type: Boolean,
+      default: false,
+    },
     flaggedBy: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
