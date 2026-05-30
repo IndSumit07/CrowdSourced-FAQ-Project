@@ -10,7 +10,6 @@ import toast from "react-hot-toast";
 
 const answerSchema = z.object({
   answer: z.string().min(10, "Answer must be at least 10 characters"),
-  confidence: z.number().min(1).max(5).default(5),
 });
 
 const ContributorDashboard = () => {
@@ -152,13 +151,6 @@ const ContributorDashboard = () => {
                     <p className="text-stone-600 text-sm leading-relaxed">
                       {resp.answer}
                     </p>
-                    {resp.confidence && (
-                      <div className="mt-2 flex items-center gap-3">
-                        <span className="text-xs font-bold text-[#0D9488]">
-                          Confidence: {resp.confidence}/5
-                        </span>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <button
@@ -198,24 +190,6 @@ const ContributorDashboard = () => {
             {errors.answer && (
               <p className="text-red-400 text-xs mt-1">
                 {errors.answer.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-stone-700 mb-1">
-              Confidence Score (1-5)
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="5"
-              {...register("confidence", { valueAsNumber: true })}
-              className={`input-field rounded-xl px-4 py-3 ${errors.confidence ? "border-red-500" : "border-stone-200"}`}
-            />
-            {errors.confidence && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.confidence.message}
               </p>
             )}
           </div>

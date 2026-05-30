@@ -112,7 +112,7 @@ export class ContributorService {
     return response;
   }
 
-  async submitAnswer(queryId, contributorId, { answer, confidence }) {
+  async submitAnswer(queryId, contributorId, { answer }) {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
 
@@ -136,10 +136,7 @@ export class ContributorService {
     if (existing.answer)
       throw new BadRequestError("You have already submitted an answer");
 
-    const updated = await responseRepo.updateById(existing._id, {
-      answer,
-      confidence,
-    });
+    const updated = await responseRepo.updateById(existing._id, { answer });
     await queryRepo.incrementResponseCount(queryId);
     await userRepo.incrementReputation(contributorId, 5);
 

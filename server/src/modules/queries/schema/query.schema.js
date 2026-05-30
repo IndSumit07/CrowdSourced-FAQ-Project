@@ -126,12 +126,6 @@ const contributorResponseSchema = new mongoose.Schema(
       minlength: [10, "Answer must be at least 10 characters"],
       maxlength: [5000, "Answer cannot exceed 5000 characters"],
     },
-    confidence: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3,
-    },
     skipped: {
       type: Boolean,
       default: false,

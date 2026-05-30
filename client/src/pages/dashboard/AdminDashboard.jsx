@@ -465,19 +465,6 @@ const rejectMutation = useMutation({
                             <span className="ml-auto text-[10px] font-bold text-stone-400 uppercase tracking-wider">
                               Answer {idx + 1}
                             </span>
-                            {ans.confidence && (
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                  ans.confidence >= 4
-                                    ? "bg-green-100 text-green-700"
-                                    : ans.confidence >= 3
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                Confidence {ans.confidence}/5
-                              </span>
-                            )}
                           </div>
 
                           <p className="text-stone-700 text-sm leading-relaxed">

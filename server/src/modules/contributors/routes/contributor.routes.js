@@ -13,7 +13,6 @@ const queryIdSchema = z.object({ queryId: z.string().regex(/^[0-9a-fA-F]{24}$/) 
 
 const answerSchema = z.object({
   answer: z.string().min(10, "Answer must be at least 10 characters").max(5000),
-  confidence: z.number().int().min(1).max(5).optional().default(3),
 });
 
 router.use(authenticate);
