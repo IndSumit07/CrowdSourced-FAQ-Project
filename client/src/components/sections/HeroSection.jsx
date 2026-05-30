@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 const HeroSection = () => {
+  const { user } = useAuthStore();
+
   return (
     <section
       id="home"
@@ -58,25 +61,27 @@ const HeroSection = () => {
               />
             </svg>
           </Link>
-          <Link
-            to="/ask"
-            className="group inline-flex items-center justify-center gap-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:border-teal-600 hover:text-teal-600 transition-all duration-200 shadow-sm w-full sm:w-auto"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              viewBox="0 0 24 24"
+          {user?.role !== "admin" && (
+            <Link
+              to="/ask"
+              className="group inline-flex items-center justify-center gap-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 rounded-full px-8 py-4 text-sm font-bold tracking-wide hover:border-teal-600 hover:text-teal-600 transition-all duration-200 shadow-sm w-full sm:w-auto"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"
-              />
-            </svg>
-            Ask a Question
-          </Link>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"
+                />
+              </svg>
+              Ask a Question
+            </Link>
+          )}
         </div>
 
         {/* Stats row */}

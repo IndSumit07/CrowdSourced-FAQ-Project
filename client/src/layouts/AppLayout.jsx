@@ -26,7 +26,6 @@ const navItems = {
   admin: [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/faqs', icon: Search, label: 'Browse FAQs' },
-    { to: '/ask', icon: MessageSquare, label: 'Ask Question' },
     { to: '/feed', icon: Zap, label: 'Live Feed' },
     { to: '/contributor', icon: Users, label: 'My Contributions' },
     { to: '/admin', icon: ShieldCheck, label: 'Admin Panel' },

@@ -56,7 +56,7 @@ const DashboardLayout = () => {
       name: "Ask Query",
       path: "/ask",
       icon: HelpCircle,
-      roles: ["user", "admin", "guest"],
+      roles: ["user", "guest"],
     },
     {
       name: "Live Feed",

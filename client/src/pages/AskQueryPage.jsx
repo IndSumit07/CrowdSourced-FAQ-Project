@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -99,7 +99,14 @@ const AskQueryPage = () => {
   const [isChecking, setIsChecking] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      navigate("/dashboard", { replace: true });
+      toast.error("Administrators are not permitted to submit queries.");
+    }
+  }, [user, navigate]);
 
   const {
     register,
