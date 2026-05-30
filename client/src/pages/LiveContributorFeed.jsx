@@ -17,6 +17,9 @@ const QueryCard = ({ q }) => {
   const navigate = useNavigate();
   const queryId = q._id || q.queryId;
 
+  // Determine if the current user is the submitter (creator) of the query
+  const isCreator = user && (typeof q.creator === "object" ? q.creator?._id === user.id : q.creator === user.id);
+
   const [phase, setPhase] = useState("idle"); // "idle" | "accepted" | "submitted" | "skipped"
   const [expanded, setExpanded] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -40,6 +43,10 @@ const QueryCard = ({ q }) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to participate in answering queries.");
       navigate("/login", { state: { redirectTo: "/feed" } });
+      return;
+    }
+    if (isCreator) {
+      toast.error("You cannot accept your own query.");
       return;
     }
     try {
@@ -67,6 +74,10 @@ const QueryCard = ({ q }) => {
       toast.error("Answer must be at least 10 characters.");
       return;
     }
+    if (isCreator) {
+      toast.error("You cannot answer your own query.");
+      return;
+    }
     setSubmitting(true);
     try {
       await contributorService.answer(queryId, { answer: answer.trim(), confidence });
@@ -89,6 +100,10 @@ const QueryCard = ({ q }) => {
       navigate("/login", { state: { redirectTo: "/feed" } });
       return;
     }
+    if (isCreator) {
+      toast.error("You cannot skip your own query.");
+      return;
+    }
     try {
       await contributorService.skip(queryId);
       setPhase("skipped");
@@ -104,6 +119,10 @@ const QueryCard = ({ q }) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to flag queries.");
       navigate("/login", { state: { redirectTo: "/feed" } });
+      return;
+    }
+    if (isCreator) {
+      toast.error("You cannot flag your own query.");
       return;
     }
     setFlagging(true);
@@ -203,58 +222,66 @@ const QueryCard = ({ q }) => {
 
           {/* Action buttons */}
           <div className="flex gap-2">
-            {phase === "idle" && userAction === "none" && (
+            {isCreator ? (
+              <span className="text-xs text-stone-500 font-bold bg-stone-50 border border-stone-200 px-3 py-1.5 rounded-lg">
+                Your own query
+              </span>
+            ) : (
               <>
-                <button
-                  onClick={handleSkip}
-                  className="px-4 py-2 border border-stone-300 text-stone-500 hover:text-stone-700 hover:border-stone-400 rounded-xl text-sm font-bold transition-colors"
-                >
-                  Skip
-                </button>
-                <button
-                  onClick={handleFlag}
-                  disabled={flagging}
-                  className="px-4 py-2 border border-red-300 text-red-600 hover:text-red-700 hover:border-red-400 rounded-xl text-sm font-bold transition-colors"
-                  title="Flag as irrelevant"
-                >
-                  <Flag className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleAccept}
-                  className="px-5 py-2 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
-                >
-                  ACCEPT
-                </button>
-              </>
-            )}
-
-            {phase === "accepted" && (
-              <button
-                onClick={() => setExpanded((v) => !v)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
-              >
-                {expanded ? (
+                {phase === "idle" && userAction === "none" && (
                   <>
-                    <ChevronUp className="w-4 h-4" /> Hide
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4" /> Write Answer
+                    <button
+                      onClick={handleSkip}
+                      className="px-4 py-2 border border-stone-300 text-stone-500 hover:text-stone-700 hover:border-stone-400 rounded-xl text-sm font-bold transition-colors"
+                    >
+                      Skip
+                    </button>
+                    <button
+                      onClick={handleFlag}
+                      disabled={flagging}
+                      className="px-4 py-2 border border-red-300 text-red-600 hover:text-red-700 hover:border-red-400 rounded-xl text-sm font-bold transition-colors"
+                      title="Flag as irrelevant"
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleAccept}
+                      className="px-5 py-2 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
+                    >
+                      ACCEPT
+                    </button>
                   </>
                 )}
-              </button>
-            )}
 
-            {phase === "submitted" && (
-              <span className="text-xs text-emerald-600 font-bold">
-                Waiting for deadline to pick best answer
-              </span>
-            )}
+                {phase === "accepted" && (
+                  <button
+                    onClick={() => setExpanded((v) => !v)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
+                  >
+                    {expanded ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" /> Hide
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" /> Write Answer
+                      </>
+                    )}
+                  </button>
+                )}
 
-            {phase === "idle" && userAction !== "none" && userAction !== "accepted" && (
-              <span className="text-xs text-stone-400 font-bold">
-                {userAction === "flagged" ? "You flagged this query" : "You skipped this query"}
-              </span>
+                {phase === "submitted" && (
+                  <span className="text-xs text-emerald-600 font-bold">
+                    Waiting for deadline to pick best answer
+                  </span>
+                )}
+
+                {phase === "idle" && userAction !== "none" && userAction !== "accepted" && (
+                  <span className="text-xs text-stone-400 font-bold">
+                    {userAction === "flagged" ? "You flagged this query" : "You skipped this query"}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>

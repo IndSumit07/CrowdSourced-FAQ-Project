@@ -35,14 +35,16 @@ export class ContributorService {
 
     await queryRepo.updateStatus(queryId, "rejected");
 
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+
     await Notification.create({
-      recipient: query.creator,
+      recipient: creatorId,
       type: "query_flagged",
       message: reason,
       metadata: { queryId },
     });
 
-    io.to(`user:${query.creator}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+    io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
       type: "query_flagged",
       message: reason,
       queryId,
@@ -63,7 +65,8 @@ export class ContributorService {
       );
     }
 
-    if (query.creator.toString() === contributorId) {
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+    if (creatorId === contributorId) {
       throw new ForbiddenError("Cannot accept your own query");
     }
 
@@ -112,6 +115,11 @@ export class ContributorService {
   async submitAnswer(queryId, contributorId, { answer, confidence }) {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
+
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+    if (creatorId === contributorId) {
+      throw new ForbiddenError("Cannot answer your own query");
+    }
 
     if (["completed", "rejected", "expired"].includes(query.status)) {
       throw new BadRequestError("This query is no longer accepting answers");
@@ -165,6 +173,11 @@ export class ContributorService {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
 
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+    if (creatorId === contributorId) {
+      throw new ForbiddenError("Cannot skip your own query");
+    }
+
     const existing = await responseRepo.findByQueryAndContributor(
       queryId,
       contributorId,
@@ -196,7 +209,8 @@ export class ContributorService {
       throw new BadRequestError("This query can no longer be flagged");
     }
 
-    if (query.creator.toString() === contributorId) {
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+    if (creatorId === contributorId) {
       throw new ForbiddenError("Cannot flag your own query");
     }
 

@@ -98,6 +98,7 @@ export class QueryService {
         category: query.category,
         deadline: query.deadline,
         createdAt: query.createdAt,
+        creator: query.creator,
       });
     } catch (socketErr) {
       logger.warn({
