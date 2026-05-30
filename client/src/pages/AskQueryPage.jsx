@@ -236,15 +236,35 @@ const AskQueryPage = () => {
           <label className="block text-sm font-bold text-stone-700 mb-2">
             Your Question
           </label>
-          <textarea
-            {...register("question")}
-            rows={4}
-            onBlur={handleBlur}
-            className={`input-field rounded-2xl px-4 py-3 min-h-[140px] resize-none w-full ${
-              errors.question ? "border-red-500" : "border-stone-200"
-            }`}
-            placeholder="e.g., How do I prepare for a Google SWE internship interview?"
-          />
+          <div className="relative flex gap-2">
+            <textarea
+              {...register("question")}
+              rows={4}
+              onBlur={handleBlur}
+              className={`input-field rounded-2xl px-4 py-3 min-h-[140px] resize-none w-full ${
+                errors.question ? "border-red-500" : "border-stone-200"
+              }`}
+              placeholder="e.g., How do I prepare for a Google SWE internship interview?"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (questionValue && questionValue.trim().length >= 10) {
+                  runRAG(questionValue);
+                } else {
+                  toast.error("Question must be at least 10 characters to search");
+                }
+              }}
+              disabled={isAsking || !questionValue?.trim() || questionValue.trim().length < 10}
+              className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-extrabold tracking-wider transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap h-fit self-start"
+            >
+              {isAsking ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Search"
+              )}
+            </button>
+          </div>
           {errors.question && (
             <p className="text-red-500 text-xs mt-1.5 font-medium">
               {errors.question.message}
@@ -313,12 +333,7 @@ const AskQueryPage = () => {
           </div>
         )}
 
-        {/* First-visit nudge */}
-        {!isAsking && !ragResult && questionValue?.length >= 10 && (
-          <p className="text-sm text-stone-500 italic">
-            Click outside the text area to search our knowledge base.
-          </p>
-        )}
+        
 
         {/* Submit button */}
         <div className="pt-2">
