@@ -33,6 +33,7 @@ const buildUserResponse = (user) => ({
   expertise: user.expertise ?? [],
   totalAnswers: user.totalAnswers ?? 0,
   totalAccepted: user.totalAccepted ?? 0,
+  createdAt: user.createdAt,
 });
 
 export class AuthService {

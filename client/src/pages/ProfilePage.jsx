@@ -1,7 +1,23 @@
+import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import api from '@/lib/axios';
 
 const ProfilePage = () => {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
+
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      try {
+        const { data } = await api.get('/auth/me');
+        if (data?.data?.user) {
+          updateUser(data.data.user);
+        }
+      } catch (err) {
+        console.error('Failed to fetch latest profile:', err);
+      }
+    };
+    fetchLatestProfile();
+  }, [updateUser]);
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -22,7 +38,9 @@ const ProfilePage = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-stone-500 text-sm font-bold">Member Since</span>
-            <span className="text-stone-900 font-medium">{new Date(user?.createdAt || Date.now()).toLocaleDateString()}</span>
+            <span className="text-stone-900 font-medium">
+              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Loading...'}
+            </span>
           </div>
           
           {user?.role === 'contributor' && (
