@@ -67,4 +67,21 @@ export class AuthController {
     await authService.changePassword(req.user.id, req.body);
     return ApiResponse.success(res, null, "Password changed successfully");
   });
+
+  googleAuth = asyncHandler(async (req, res) => {
+    const { accessToken } = req.body;
+    if (!accessToken) {
+      return ApiResponse.error(res, "Google access token is required", 400, "BAD_REQUEST");
+    }
+    const result = await authService.googleAuth(accessToken);
+    res.cookie("refreshToken", result.refreshToken, authConfig.cookie);
+    return ApiResponse.success(
+      res,
+      {
+        user: result.user,
+        accessToken: result.accessToken,
+      },
+      "Google authentication successful",
+    );
+  });
 }

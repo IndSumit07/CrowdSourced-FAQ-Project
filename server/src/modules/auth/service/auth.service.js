@@ -164,4 +164,49 @@ export class AuthService {
     await userRepo.updateById(userId, { password: hashed });
     await userRepo.invalidateRefreshToken(userId);
   }
+
+  async googleAuth(accessToken) {
+    // Verify the access token by fetching the user profile from Google
+    let googleUser;
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v3/userinfo`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if (!response.ok) throw new Error("Failed to fetch Google user info");
+      googleUser = await response.json();
+    } catch {
+      throw new UnauthorizedError("Invalid Google access token");
+    }
+
+    const { sub: googleId, email, name, picture: avatar } = googleUser;
+
+    if (!email) throw new UnauthorizedError("Google account has no email");
+
+    const { user } = await userRepo.findOrCreateGoogleUser({
+      googleId,
+      email,
+      name,
+      avatar,
+    });
+
+    if (!user.isActive) throw new UnauthorizedError("Account is deactivated");
+
+    const tokenPayload = buildTokenPayload(user);
+    const accessTokenJwt = signAccessToken(tokenPayload);
+    const refreshToken = signRefreshToken({ id: user._id.toString() });
+    const family = randomUUID();
+    const hashedRefresh = await bcrypt.hash(refreshToken, 10);
+
+    await userRepo.updateRefreshToken(user._id, hashedRefresh, family);
+    await cacheDel(`user:${user._id}`);
+
+    logger.info({ msg: "User signed in via Google", userId: user._id, email });
+
+    return {
+      user: buildUserResponse(user),
+      accessToken: accessTokenJwt,
+      refreshToken,
+    };
+  }
 }

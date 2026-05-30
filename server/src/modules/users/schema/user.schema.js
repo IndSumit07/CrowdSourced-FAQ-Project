@@ -20,9 +20,19 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: false, // Optional for Google OAuth users
       minlength: [8, "Password must be at least 8 characters"],
       select: false,
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
     role: {
       type: String,
@@ -97,7 +107,7 @@ userSchema.index({ createdAt: -1 });
 
 // Pre-save hook to hash password
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
   const bcrypt = await import("bcryptjs");
   this.password = await bcrypt.default.hash(this.password, 12);
   next();

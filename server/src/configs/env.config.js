@@ -25,6 +25,9 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
+  // Google OAuth — used for verifying Google access tokens on the server
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
   AI_PROVIDER: z
     .enum(["gemini", "openai", "bedrock", "jina", "openrouter"])
     .default("gemini"),

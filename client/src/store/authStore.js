@@ -46,6 +46,22 @@ export const useAuthStore = create(
         }
       },
 
+      googleLogin: async (accessToken) => {
+        set({ isLoading: true });
+        try {
+          const { data } = await api.post("/auth/google", { accessToken });
+          get().setAuth(data.data.user, data.data.accessToken);
+          return { success: true };
+        } catch (err) {
+          return {
+            success: false,
+            message: err.response?.data?.message || "Google sign-in failed",
+          };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       register: async (payload) => {
         set({ isLoading: true });
         try {

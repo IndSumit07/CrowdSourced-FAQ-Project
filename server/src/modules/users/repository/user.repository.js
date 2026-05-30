@@ -89,4 +89,36 @@ export class UserRepository {
   async existsByEmail(email) {
     return User.exists({ email: email.toLowerCase().trim() });
   }
+
+  async findByGoogleId(googleId) {
+    return User.findOne({ googleId }).lean();
+  }
+
+  /**
+   * Find an existing user by Google ID, or by email (to link the Google account),
+   * or create a brand-new user if neither exists.
+   */
+  async findOrCreateGoogleUser({ googleId, email, name, avatar }) {
+    // 1. Already linked to this Google account
+    let user = await User.findOne({ googleId }).lean();
+    if (user) return { user, isNew: false };
+
+    // 2. Email already exists (email-registered user) — link Google to that account
+    user = await User.findOneAndUpdate(
+      { email: email.toLowerCase().trim() },
+      { $set: { googleId, authProvider: "google", avatar: avatar || null } },
+      { new: true }
+    ).lean();
+    if (user) return { user, isNew: false };
+
+    // 3. Completely new user — create with Google provider
+    const created = await User.create({
+      name,
+      email: email.toLowerCase().trim(),
+      googleId,
+      authProvider: "google",
+      avatar: avatar || null,
+    });
+    return { user: created.toObject(), isNew: true };
+  }
 }

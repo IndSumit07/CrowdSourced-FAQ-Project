@@ -14,10 +14,10 @@
     "seed:faqs": "node scripts/seed-faqs.js"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.888.0",
     "@bull-board/api": "^6.7.0",
     "@bull-board/express": "^6.7.0",
     "@google/generative-ai": "^0.21.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.888.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.77.4",
     "cookie-parser": "^1.4.7",
@@ -26,6 +26,7 @@
     "express": "^5.1.0",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.0",
+    "google-auth-library": "^10.6.2",
     "helmet": "^8.0.0",
     "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.2",

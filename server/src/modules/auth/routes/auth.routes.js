@@ -15,6 +15,7 @@ const authController = new AuthController();
 // Public routes
 router.post("/register", strictAuthLimiter, validateBody(registerSchema), authController.register);
 router.post("/login", strictAuthLimiter, validateBody(loginSchema), authController.login);
+router.post("/google", strictAuthLimiter, authController.googleAuth);
 router.post("/refresh", authController.refresh);
 
 // Protected routes
