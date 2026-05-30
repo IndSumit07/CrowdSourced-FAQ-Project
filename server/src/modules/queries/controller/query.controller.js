@@ -6,6 +6,15 @@ import { ForbiddenError } from "../../../utils/errors.js";
 const queryService = new QueryService();
 
 export class QueryController {
+  askQuery = asyncHandler(async (req, res) => {
+    const { question } = req.body;
+    const result = await queryService.askQuery(question);
+    return ApiResponse.success(res, {
+      aiAnswer: result.aiAnswer,
+      relatedFAQs: result.relatedFAQs,
+    }, "AI answer generated");
+  });
+
   submit = asyncHandler(async (req, res) => {
     if (req.user?.role === "admin") {
       throw new ForbiddenError("Administrators are not permitted to submit queries");

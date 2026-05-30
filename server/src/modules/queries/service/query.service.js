@@ -5,6 +5,7 @@ import {
 import { FAQService } from "../../faq/service/faq.service.js";
 import { EmbeddingService } from "../../ai/service/embedding.service.js";
 import { AIValidationService } from "../../ai/service/aiValidation.service.js";
+import { RAGService } from "../../ai/service/rag.service.js";
 import { QueryExpiryService } from "./query.expiry.service.js";
 import { deadlineQueue } from "../../queues/deadline.queue.js";
 import {
@@ -30,11 +31,46 @@ export class QueryService {
   #faqService;
   #embeddingService;
   #aiValidationService;
+  #ragService;
 
   constructor() {
     this.#faqService = new FAQService();
     this.#embeddingService = new EmbeddingService();
     this.#aiValidationService = new AIValidationService();
+    this.#ragService = new RAGService();
+  }
+
+  /**
+   * RAG-powered ask flow:
+   * 1. Retrieve semantically-related FAQs from MongoDB vector search.
+   * 2. Generate a grounded AI answer via OpenRouter RAG.
+   * Returns { aiAnswer, relatedFAQs }
+   */
+  async askQuery(question) {
+    // Step 1: Generate embedding and retrieve related FAQs
+    const embedding = await this.#embeddingService.embed(question);
+    const resolution = await this.#faqService.resolveQuery(question);
+
+    // Build flat list of related FAQs (best match + alternatives)
+    const relatedFAQs = [];
+    if (resolution.faq) {
+      relatedFAQs.push({ ...resolution.faq, isBest: true });
+    }
+    if (resolution.alternatives?.length) {
+      relatedFAQs.push(
+        ...resolution.alternatives.map((f) => ({ ...f, isBest: false }))
+      );
+    }
+
+    // Step 2: Generate RAG answer grounded in retrieved context
+    let aiAnswer = null;
+    try {
+      aiAnswer = await this.#ragService.generateAnswer(question, relatedFAQs);
+    } catch (err) {
+      logger.warn({ msg: "RAG generation failed, continuing without AI answer", err: err.message });
+    }
+
+    return { aiAnswer, relatedFAQs };
   }
 
   async submit(question, creatorId, force = false) {

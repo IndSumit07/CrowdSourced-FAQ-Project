@@ -25,6 +25,14 @@ const submitSchema = z.object({
   force: z.boolean().optional(),
 });
 
+// Schema for the RAG ask endpoint (same validation as submit)
+const askSchema = z.object({
+  question: z
+    .string()
+    .min(10, "Question must be at least 10 characters")
+    .max(1000),
+});
+
 const queryListSchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
@@ -32,6 +40,9 @@ const queryListSchema = z.object({
   status: z.string().optional(),
   sortBy: z.string().optional().default("-createdAt"),
 });
+
+// ─── RAG Ask Route (public — no auth required for preview) ───
+router.post("/ask", aiLimiter, validateBody(askSchema), queryController.askQuery);
 
 // ─── Static Routes (No Route Parameters) ───
 // Public
