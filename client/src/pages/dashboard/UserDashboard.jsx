@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryService, faqService } from "../../services/api";
+import { queryService } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Link } from "react-router-dom";
@@ -8,7 +7,6 @@ import { Link } from "react-router-dom";
 const UserDashboard = () => {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
-  const [openFaqIds, setOpenFaqIds] = useState(() => new Set());
 
   const {
     data: queries,
@@ -26,22 +24,7 @@ const UserDashboard = () => {
     enabled: isAuthenticated,
   });
 
-  const { data: faqs, isLoading: faqsLoading } = useQuery({
-    queryKey: ["user-dashboard-faqs"],
-    queryFn: async () => {
-      const res = await faqService.getAll({ page: 1, limit: 50 });
-      return res.data.data.docs || res.data.data || [];
-    },
-  });
-
-  const toggleFaqOpen = (id) => {
-    setOpenFaqIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  
 
   const deleteMutation = useMutation({
     mutationFn: (id) => queryService.delete(id),
@@ -71,78 +54,7 @@ const UserDashboard = () => {
 
   return (
     <div className="w-full space-y-12">
-      {/* FAQs Section - on top */}
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-black text-stone-900 tracking-tight">
-              Knowledge Base
-            </h2>
-            <p className="text-xs text-stone-500 mt-0.5">
-              Browse community-curated FAQs
-            </p>
-          </div>
-          <Link
-            to="/faqs"
-            className="text-xs font-extrabold text-teal-600 hover:text-teal-800 uppercase tracking-wider"
-          >
-            View all →
-          </Link>
-        </div>
-
-        {faqsLoading ? (
-          <div className="grid gap-3">
-            <Skeleton className="h-16 w-full rounded-xl" />
-            <Skeleton className="h-16 w-full rounded-xl" />
-            <Skeleton className="h-16 w-full rounded-xl" />
-          </div>
-        ) : faqs?.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-stone-300 rounded-2xl bg-stone-50">
-            <p className="text-stone-500 text-sm">No FAQs yet.</p>
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {(faqs || []).slice(0, 10).map((faq) => {
-              const isOpen = openFaqIds.has(faq._id);
-              return (
-                <div
-                  key={faq._id}
-                  className="bg-white border border-stone-200 rounded-xl shadow-sm"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleFaqOpen(faq._id)}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
-                  >
-                    <span className="text-sm font-bold text-stone-900 line-clamp-1">
-                      {faq.title}
-                    </span>
-                    <span
-                      className={`text-stone-400 text-lg transition-transform shrink-0 ${isOpen ? "rotate-45" : ""}`}
-                    >
-                      +
-                    </span>
-                  </button>
-                  {isOpen && (
-                    <div className="px-4 pb-4">
-                      <p className="text-sm text-stone-600 leading-relaxed">
-                        {faq.answer}
-                      </p>
-                      {faq.section && (
-                        <span className="inline-block mt-2 px-2 py-1 bg-stone-100 text-stone-500 rounded-md text-[10px] font-bold uppercase">
-                          {typeof faq.section === "object" ? faq.section.title : faq.section}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* My Queries Section - below FAQs */}
+      {/* My Queries Section */}
       <section>
         <div className="mb-6 sm:mb-8">
           <h2 className="text-xl font-black text-stone-900 tracking-tight">

@@ -836,7 +836,7 @@ const rejectMutation = useMutation({
       >
         <form onSubmit={handleAddFaqSubmit} className="space-y-6">
           <p className="text-sm text-stone-400 -mt-2">
-            Fill in the details below to create and publish a new FAQ entry directly to the knowledge base.
+            Fill in the details below to create and publish a new FAQ entry.
           </p>
 
           <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20 space-y-4">

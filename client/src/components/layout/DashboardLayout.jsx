@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 const DashboardLayout = () => {
@@ -48,7 +49,7 @@ const DashboardLayout = () => {
     },
     {
       name: "Dashboard",
-      path: "/dashboard",
+      path: user?.role === "admin" ? "/admin" : "/dashboard",
       icon: Home,
       roles: ["user", "admin"],
     },

@@ -10,6 +10,7 @@ import LiveContributorFeed from '../pages/LiveContributorFeed';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import UserDashboard from '../pages/dashboard/UserDashboard';
 import ContributorDashboard from '../pages/dashboard/ContributorDashboard';
+import AdminDashboard from '../pages/dashboard/AdminDashboard';
 import ProfilePage from '../pages/ProfilePage';
 
 // A wrapper for routes that require authentication
@@ -60,6 +61,7 @@ const AppRoutes = () => {
         {/* Dashboard - public, FAQs on top for everyone */}
         <Route path="/dashboard" element={<PublicDashboard />} />
         <Route path="/contributions" element={<ProtectedRoute><ContributorDashboard /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>
 

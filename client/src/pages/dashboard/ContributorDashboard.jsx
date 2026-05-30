@@ -88,7 +88,8 @@ const ContributorDashboard = () => {
       ) : (
         <div className="grid gap-4">
           {responses?.map((resp) => {
-            const q = resp.query || resp; // Fallback if populated differently
+            const q = resp.query;
+            const hasAnswer = !!resp.answer;
             return (
               <div
                 key={resp._id}
@@ -102,77 +103,62 @@ const ContributorDashboard = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
-                        resp.accepted
+                        resp.accepted && q?.status === "completed"
                           ? "bg-teal-100 text-teal-800"
-                          : resp.answer
+                          : hasAnswer
                             ? "bg-blue-100 text-blue-800"
                             : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {resp.accepted
-                        ? "Accepted ✓"
-                        : resp.answer
+                      {resp.accepted && q?.status === "completed"
+                        ? "Selected by Admin ✓"
+                        : hasAnswer
                           ? "Answered"
                           : "Pending Answer"}
                     </span>
-                    {resp.accepted && (
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                          />
-                        </svg>
-                        Selected by admin
-                      </span>
-                    )}
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
+                        q?.status === "completed"
+                          ? "bg-teal-100 text-teal-800"
+                          : q?.status === "open"
+                            ? "bg-blue-100 text-blue-800"
+                            : q?.status === "in-progress"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-stone-100 text-stone-600"
+                      }`}
+                    >
+                      Query: {q?.status || "unknown"}
+                    </span>
                   </div>
                   <span className="text-xs text-stone-400 font-bold shrink-0">
                     {new Date(resp.createdAt).toLocaleDateString()}
                   </span>
                 </div>
 
-                <h3 className="text-stone-900 font-bold mb-4">{q.question}</h3>
+                <div className="mb-4 p-4 bg-stone-50 rounded-xl border border-stone-200">
+                  <p className="text-xs font-extrabold text-stone-500 uppercase tracking-wider mb-1">Question</p>
+                  <p className="text-stone-900 font-bold">{q?.question}</p>
+                  {q?.category && (
+                    <span className="inline-block mt-2 px-2 py-1 bg-stone-100 text-stone-500 rounded-md text-[10px] font-bold uppercase">
+                      {q.category}
+                    </span>
+                  )}
+                </div>
 
-                {resp.answer ? (
+                {hasAnswer ? (
                   <div
-                    className={`p-4 rounded-xl border ${resp.accepted ? "bg-teal-50 border-teal-200" : "bg-stone-50 border-stone-100"}`}
+                    className={`p-4 rounded-xl border ${resp.accepted && q?.status === "completed" ? "bg-teal-50 border-teal-200" : "bg-stone-50 border-stone-100"}`}
                   >
                     <p className="text-stone-600 text-sm leading-relaxed">
                       {resp.answer}
                     </p>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="text-xs font-bold text-[#0D9488]">
-                        Confidence: {resp.confidence}/5
-                      </span>
-                      {resp.accepted && (
-                        <span className="text-xs font-bold text-teal-700 flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          Admin selected this answer
+                    {resp.confidence && (
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="text-xs font-bold text-[#0D9488]">
+                          Confidence: {resp.confidence}/5
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button

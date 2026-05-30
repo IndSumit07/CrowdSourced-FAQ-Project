@@ -88,11 +88,24 @@ export class AdminService {
 
     let acceptedContributorId = null;
     if (selectedResponse) {
+      // Reset all other responses' accepted flag before setting new one
+      for (const a of answers) {
+        if (a._id.toString() !== selectedResponse._id.toString() && a.accepted) {
+          await responseRepo.updateById(a._id, { accepted: false });
+        }
+      }
       await responseRepo.updateById(selectedResponse._id, { accepted: true });
       acceptedContributorId = (
         selectedResponse.contributor._id || selectedResponse.contributor
       ).toString();
       await userRepo.incrementReputationAndAccepted(acceptedContributorId, 10);
+    } else {
+      // AI answer selected - reset ALL responses' accepted flag
+      for (const a of answers) {
+        if (a.accepted) {
+          await responseRepo.updateById(a._id, { accepted: false });
+        }
+      }
     }
 
     const aiSummaryUsed = responseId === null && !selectedResponse;
