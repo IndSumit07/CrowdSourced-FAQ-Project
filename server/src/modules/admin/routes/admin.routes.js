@@ -72,10 +72,6 @@ const approveFaqSchema = z.object({
 const createDirectFaqSchema = z.object({
   title: z.string().min(10).max(300),
   answer: z.string().min(20).max(10000),
-  category: z
-    .enum(["internship", "placement", "resume", "dsa", "coding-interview", "career", "general"])
-    .optional()
-    .default("general"),
   sectionId: sectionIdSchema,
   tags: z.array(z.string()).optional().default([]),
 });

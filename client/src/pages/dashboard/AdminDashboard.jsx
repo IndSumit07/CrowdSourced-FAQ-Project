@@ -31,7 +31,6 @@ const AdminDashboard = () => {
   const [addFaqForm, setAddFaqForm] = useState({
     title: "",
     answer: "",
-    category: "general",
     sectionId: "",
     tags: "",
   });
@@ -189,7 +188,7 @@ const rejectMutation = useMutation({
       queryClient.invalidateQueries(["admin-stats"]);
       queryClient.invalidateQueries(["faqs"]);
       setShowAddFaq(false);
-      setAddFaqForm({ title: "", answer: "", category: "general", sectionId: "", tags: "" });
+      setAddFaqForm({ title: "", answer: "", sectionId: "", tags: "" });
     },
     onError: (err) =>
       toast.error(err.response?.data?.message || "Failed to create FAQ"),
@@ -217,7 +216,6 @@ const rejectMutation = useMutation({
     createDirectFaqMutation.mutate({
       title: addFaqForm.title,
       answer: addFaqForm.answer,
-      category: addFaqForm.category,
       sectionId: addFaqForm.sectionId,
       tags,
     });
@@ -897,27 +895,7 @@ const rejectMutation = useMutation({
           </div>
 
           <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
-                  Category
-                </label>
-                <select
-                  className="w-full bg-white/90 border border-white/30 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm cursor-pointer appearance-none"
-                  value={addFaqForm.category}
-                  onChange={(e) => setAddFaqForm((p) => ({ ...p, category: e.target.value }))}
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
-                >
-                  <option value="general">General</option>
-                  <option value="internship">Internship</option>
-                  <option value="placement">Placement</option>
-                  <option value="resume">Resume</option>
-                  <option value="dsa">DSA</option>
-                  <option value="coding-interview">Coding Interview</option>
-                  <option value="career">Career</option>
-                </select>
-              </div>
-
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
                   Section <span className="text-red-400">*</span>
