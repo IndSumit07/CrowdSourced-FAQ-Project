@@ -41,6 +41,12 @@ const DashboardLayout = () => {
 
   const navLinks = [
     {
+      name: "FAQs",
+      path: "/faqs",
+      icon: BookOpen,
+      roles: ["user", "admin", "guest"],
+    },
+    {
       name: "Dashboard",
       path: "/dashboard",
       icon: Home,
@@ -62,12 +68,6 @@ const DashboardLayout = () => {
       name: "Live Feed",
       path: "/feed",
       icon: Radio,
-      roles: ["user", "admin", "guest"],
-    },
-    {
-      name: "FAQs",
-      path: "/faqs",
-      icon: BookOpen,
       roles: ["user", "admin", "guest"],
     },
     { name: "Profile", path: "/profile", icon: User, roles: ["user", "admin"] },

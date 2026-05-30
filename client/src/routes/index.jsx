@@ -10,15 +10,7 @@ import LiveContributorFeed from '../pages/LiveContributorFeed';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import UserDashboard from '../pages/dashboard/UserDashboard';
 import ContributorDashboard from '../pages/dashboard/ContributorDashboard';
-import AdminDashboard from '../pages/dashboard/AdminDashboard';
 import ProfilePage from '../pages/ProfilePage';
-
-// Dynamic Router for Dashboard based on Role
-const DashboardRouter = () => {
-  const { user } = useAuthStore();
-  if (user?.role === 'admin') return <AdminDashboard />;
-  return <UserDashboard />;
-};
 
 // A wrapper for routes that require authentication
 export const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -46,13 +38,18 @@ export const PublicRoute = ({ children }) => {
   return children;
 };
 
+// Public route for non-authenticated users (shows FAQs only)
+const PublicDashboard = () => {
+  return <UserDashboard />;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-      
+
       {/* Routes inside DashboardLayout */}
       <Route element={<DashboardLayout />}>
         {/* Public dashboard pages */}
@@ -60,8 +57,8 @@ const AppRoutes = () => {
         <Route path="/ask" element={<AskQueryPage />} />
         <Route path="/feed" element={<LiveContributorFeed />} />
 
-        {/* Protected dashboard pages */}
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
+        {/* Dashboard - public, FAQs on top for everyone */}
+        <Route path="/dashboard" element={<PublicDashboard />} />
         <Route path="/contributions" element={<ProtectedRoute><ContributorDashboard /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>

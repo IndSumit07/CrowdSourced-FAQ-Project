@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryService, faqService } from "../../services/api";
+import { useAuthStore } from "../../store/authStore";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Link } from "react-router-dom";
 
 const UserDashboard = () => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuthStore();
   const [openFaqIds, setOpenFaqIds] = useState(() => new Set());
 
   const {
@@ -21,6 +23,7 @@ const UserDashboard = () => {
       if (Array.isArray(payload?.docs)) return payload.docs;
       return [];
     },
+    enabled: isAuthenticated,
   });
 
   const { data: faqs, isLoading: faqsLoading } = useQuery({
@@ -150,7 +153,28 @@ const UserDashboard = () => {
           </p>
         </div>
 
-        {queriesLoading ? (
+        {!isAuthenticated ? (
+          <div className="text-center py-10 border border-dashed border-stone-300 rounded-2xl bg-stone-50">
+            <p className="text-stone-500 text-sm font-medium mb-1">
+              Want to ask a question?
+            </p>
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-extrabold tracking-wider transition-colors"
+              >
+                Login
+              </Link>
+              <span className="text-stone-400 text-xs">or</span>
+              <Link
+                to="/register"
+                className="px-4 py-2 bg-stone-900 hover:bg-amber-800 text-white rounded-lg text-xs font-extrabold tracking-wider transition-colors"
+              >
+                Register
+              </Link>
+            </div>
+          </div>
+        ) : queriesLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-20 w-full rounded-2xl" />
             <Skeleton className="h-20 w-full rounded-2xl" />
