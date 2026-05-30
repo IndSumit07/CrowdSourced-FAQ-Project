@@ -23,7 +23,6 @@ const QueryCard = ({ q }) => {
   const [phase, setPhase] = useState("idle"); // "idle" | "accepted" | "submitted" | "skipped"
   const [expanded, setExpanded] = useState(false);
   const [answer, setAnswer] = useState("");
-  const [confidence, setConfidence] = useState(3);
   const [submitting, setSubmitting] = useState(false);
   const [hasFlagged, setHasFlagged] = useState(false);
   const [flagging, setFlagging] = useState(false);
@@ -80,7 +79,7 @@ const QueryCard = ({ q }) => {
     }
     setSubmitting(true);
     try {
-      await contributorService.answer(queryId, { answer: answer.trim(), confidence });
+      await contributorService.answer(queryId, { answer: answer.trim() });
       setPhase("submitted");
       setExpanded(false);
       setUserAction("submitted");
@@ -306,50 +305,22 @@ const QueryCard = ({ q }) => {
             minLength={10}
           />
 
-          <div className="mt-4 flex items-center justify-between gap-4">
-            {/* Confidence selector */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-bold text-stone-500 whitespace-nowrap">
-                Confidence
-              </label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setConfidence(n)}
-                    className={`w-7 h-7 rounded-lg text-xs font-black transition-colors ${
-                      confidence >= n
-                        ? "bg-[#B45309] text-white"
-                        : "bg-stone-200 text-stone-500 hover:bg-stone-300"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs text-stone-400">
-                {["", "Low", "Fairly low", "Moderate", "High", "Very high"][confidence]}
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="px-4 py-2 border border-stone-300 text-stone-600 hover:border-stone-400 rounded-xl text-sm font-bold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex items-center gap-2 px-5 py-2 bg-[#0D9488] hover:bg-[#0a7d73] disabled:opacity-50 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
-              >
-                <Send className="w-4 h-4" />
-                {submitting ? "Submitting…" : "Submit Answer"}
-              </button>
-            </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="px-4 py-2 border border-stone-300 text-stone-600 hover:border-stone-400 rounded-xl text-sm font-bold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2 px-5 py-2 bg-[#0D9488] hover:bg-[#0a7d73] disabled:opacity-50 text-white rounded-xl text-sm font-extrabold tracking-wider transition-colors shadow-sm"
+            >
+              <Send className="w-4 h-4" />
+              {submitting ? "Submitting…" : "Submit Answer"}
+            </button>
           </div>
 
           <p className="mt-3 text-xs text-stone-400">
