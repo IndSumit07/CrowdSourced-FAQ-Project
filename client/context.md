@@ -9,6 +9,7 @@ This document provides a highly compact, comprehensive overview of the `client` 
 - **Build Tool:** Vite v8
 - **Styling:** Tailwind CSS v4 + PostCSS + Autoprefixer
 - **Routing/State:** React Router + Zustand store (`authStore`, `feedStore`, `notificationStore`).
+- **Data Fetching:** TanStack Query with a shared singleton `queryClient` in `src/lib/queryClient.js`.
 
 ---
 
@@ -65,6 +66,8 @@ client/
   - **Type:** Fixed full-width top bar + fixed left sidebar.
   - **Behavior:** Shows a live socket badge in the center only when connected.
   - **Extras:** "Home" button on top bar; sidebar shows numeric reputation only (no progress bar).
+- **`App.jsx`:
+  - Wraps the app in the shared TanStack Query client and initializes sockets once on mount.
 
 ### 3. Page Sections (`src/components/sections/`)
 - **`HeroSection.jsx`:
@@ -87,8 +90,15 @@ client/
 - **`Button.jsx`:** Reusable button variants.
 - **`Skeleton.jsx`:** Used for query lists and loading states.
 
+### 5. Dashboard Pages (`src/pages/dashboard/`)
+- **`AdminDashboard.jsx`:** Moderation surface for expired queries and pending FAQs. It reads `adminService.getStats()`, `getPendingReviewQueries()`, and `getPendingFAQs()` and shows AI-synthesized answers for expired queries when available.
+- **`UserDashboard.jsx`:** Shows personal queries and resolution states.
+- **`ContributorDashboard.jsx`:** Manages accepted queries and responses.
+
 ---
 
 ## ⚡ Key Runtime Behavior
 1. **User Dashboard:** Completed queries show resolved answer, "Resolved" badge, and resolution time (createdAt → resolvedAt).
 2. **Realtime Reputation:** Contributor reputation increments by socket event when admin selects an answer; UI updates via `updateUser()` in auth store.
+3. **Admin Realtime Refresh:** Socket events for expired queries and admin notifications invalidate `pending-review-queries` and `admin-stats` through the shared query client so the admin dashboard refreshes without a full page reload.
+4. **Expired Query Flow:** When a query times out, the server stores one sanitized AI summary in `aiSynthesizedAnswer`; the admin dashboard reuses that stored value on refresh instead of regenerating it.

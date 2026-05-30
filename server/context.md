@@ -12,8 +12,8 @@ Designed for LLMs to understand the full architecture without reading every file
 | Runtime | Node.js 20+ (ESM — `type: "module"`) |
 | Framework | Express 5 |
 | Database | MongoDB via Mongoose 8 |
-| Cache / Queues | **Upstash Redis** (serverless, TLS) via ioredis |
-| Job Queues | BullMQ (deadline, AI summarization, FAQ generation, notifications) |
+| Cache / Queues | Redis is currently disconnected; cache and queue calls use local no-op/in-memory fallbacks |
+| Job Queues | BullMQ pipeline is disabled; expiry handling is now Mongo-backed and runs in the app process |
 | Realtime | Socket.io 4 |
 | AI Provider | Gemini (primary) / OpenAI (switchable via `AI_PROVIDER` env) |
 | Auth | JWT (access 15m) + HttpOnly refresh token (7d) with rotation |
@@ -33,11 +33,11 @@ server/
 │   ├── configs/
 │   │   ├── env.config.js           # Zod-validated env schema (fails fast on bad config)
 │   │   ├── mongodb.config.js       # Mongoose connection with pooling + lifecycle logs
-│   │   ├── redis.config.js         # Upstash Redis via ioredis (TLS, two connections)
+│   │   ├── redis.config.js         # Disabled Redis shim used by cache helpers and queue placeholders
 │   │   ├── socket.config.js        # Socket.io init + room management
 │   │   ├── auth.config.js          # JWT + bcrypt + cookie constants
 │   │   ├── ai.config.js            # AI provider settings, vector search config
-│   │   └── queue.config.js         # BullMQ queue names + job defaults
+│   │   └── queue.config.js         # BullMQ queue names kept for compatibility with disabled queue stubs
 │   ├── middlewares/
 │   │   ├── auth.middleware.js      # authenticate, authorize(roles), optionalAuthenticate
 │   │   ├── error.middleware.js     # Centralized error handler + 404 handler
@@ -81,13 +81,11 @@ NODE_ENV=development
 PORT=4000
 MONGO_URI=mongodb+srv://...
 
-# Upstash Redis — get from console.upstash.com → your DB → Connect → ioredis
-UPSTASH_REDIS_HOST=your-db.upstash.io
-UPSTASH_REDIS_PORT=6379
-UPSTASH_REDIS_PASSWORD=your_upstash_password
-
-# OR use the full URL (takes precedence):
-# UPSTASH_REDIS_URL=rediss://default:<password>@<host>:6379
+# Redis is currently disconnected. These vars are kept only for future re-enable.
+# UPSTASH_REDIS_URL=
+# UPSTASH_REDIS_HOST=
+# UPSTASH_REDIS_PORT=6379
+# UPSTASH_REDIS_PASSWORD=
 
 CORS_ORIGIN=http://localhost:5173
 JWT_ACCESS_SECRET=at_least_32_chars
@@ -107,17 +105,12 @@ MIN_CONTRIBUTOR_RESPONSES=2
 
 ---
 
-## 🔄 Upstash Redis Architecture
+## 🔄 Cache / Queue Runtime
 
-**Why Upstash?** Serverless Redis — no local instance needed, TLS by default, free tier available.
-
-**Two ioredis connections are created:**
-| Connection | Variable | Purpose |
-|---|---|---|
-| `redisClient` | Cache | General caching, `withCache()`, rate limiting |
-| `bullMQRedisConnection` | BullMQ | Job queues — requires `maxRetriesPerRequest: null` and `lazyConnect: true` |
-
-**Key rule:** Upstash uses `rediss://` (TLS), not `redis://`. The config sets `tls: {}` on every ioredis instance automatically.
+- Redis is intentionally disconnected for now.
+- `src/configs/redis.config.js` exports in-memory/no-op stand-ins so cache helpers and queue imports still load.
+- `src/modules/queues/deadline.queue.js` exports disabled queue objects; `.add()` and `.remove()` log and return immediately.
+- Expiry handling is performed by `QueryExpiryService.sweepExpiredQueries()` in-process, not by BullMQ workers.
 
 ---
 
@@ -177,7 +170,7 @@ EmbeddingService.embed(question)
 Query persisted to MongoDB (status: "open")
          │
          ▼
-deadlineQueue.add() — delayed job (QUERY_DEADLINE_HOURS)
+deadlineQueue.add() — currently a disabled queue stub
          │
          ▼
 Socket.io → io.to("feed:contributors").emit("query:new")
@@ -185,24 +178,21 @@ Socket.io → io.to("feed:contributors").emit("query:new")
 
 ---
 
-## 🔄 BullMQ Pipeline (Post-Deadline)
+## 🔄 Expiry / Admin Review Flow
 
 ```
-deadlineWorker fires when deadline expires
-    ├── < MIN_CONTRIBUTOR_RESPONSES → mark "expired", notify creator
-    └── >= MIN_CONTRIBUTOR_RESPONSES → mark "processing"
+Query hits deadline
+    │
+    ▼
+QueryExpiryService.sweepExpiredQueries()
+    ├── loads all responses for the query
+    ├── AIValidationService.summarizeAnswers(question, answers[])
+    ├── sanitizeAiGeneratedText() strips markdown/special characters
+    ├── update query → status: "admin-review", aiSynthesizedAnswer, aiSummaryUsed
+    └── emit Socket.io admin + contributor notifications
          │
          ▼
-aiSummarizationWorker
-    └── AI.summarizeAnswers(question, answers[])
-         │
-         ▼
-faqGenerationWorker
-    └── AI.draftFAQ() → persist FAQ (published: false) → notify admin via Socket.io
-         │
-         ▼
-notificationWorker
-    └── Socket.io → io.to("user:{creatorId}").emit("notification:user")
+Admin dashboard reads the stored aiSynthesizedAnswer on refresh
 ```
 
 ---
@@ -220,6 +210,7 @@ notificationWorker
 - When an admin publishes a query to FAQ, the selected contributor response is marked `accepted` and the contributor gains **+10 reputation** (`incrementReputationAndAccepted`).
 - The query is updated to `completed` with `resolvedAnswer` and `resolvedAt`.
 - Socket events emitted: `contributor:answer-accepted` (notifies contributor) and `notification:user` (notifies query creator).
+- Expired queries are promoted into `admin-review` with a stored `aiSynthesizedAnswer`; the admin dashboard renders that stored text instead of regenerating it on refresh.
 
 ---
 
