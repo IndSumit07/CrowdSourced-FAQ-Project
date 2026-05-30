@@ -28,7 +28,6 @@ const AdminDashboard = () => {
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const res = await adminService.getStats();
-      // getDashboardStats returns { stats: { faqs: {...}, queries: {...} } }
       const payload = res.data.data;
       return payload.stats ?? payload;
     },
@@ -194,7 +193,7 @@ const AdminDashboard = () => {
                 <Users className="w-5 h-5 text-teal-600" />
               </div>
               <p className="text-4xl font-display font-bold text-stone-900">
-                {stats?.users?.total ?? stats?.totalUsers ?? "—"}
+                {stats?.users?.total ?? "—"}
               </p>
             </div>
             <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
@@ -205,12 +204,7 @@ const AdminDashboard = () => {
                 <MessageSquare className="w-5 h-5 text-amber-600" />
               </div>
               <p className="text-4xl font-display font-bold text-stone-900">
-                {Object.values(stats?.queries ?? {}).reduce(
-                  (a, b) => a + b,
-                  0,
-                ) ||
-                  stats?.totalQueries ||
-                  "—"}
+                {stats?.queries?.total ?? "—"}
               </p>
             </div>
             <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
@@ -232,7 +226,7 @@ const AdminDashboard = () => {
                 <Clock className="w-5 h-5 text-red-500" />
               </div>
               <p className="text-4xl font-display font-bold text-red-600">
-                {stats?.faqs?.pending ?? pendingFAQs?.length ?? "—"}
+                {pendingQueries?.length ?? stats?.queries?.adminReview ?? "—"}
               </p>
             </div>
           </>

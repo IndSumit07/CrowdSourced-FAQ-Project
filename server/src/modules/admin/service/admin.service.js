@@ -262,10 +262,20 @@ export class AdminService {
 
   async getDashboardStats() {
     await queryExpiryService.sweepExpiredQueries();
-    const [faqStats, queryStats] = await Promise.all([
+    const [userStats, faqStats, queryStats] = await Promise.all([
+      userRepo.findAll({ page: 1, limit: 1, skip: 0, sort: { createdAt: -1 } }),
       faqRepo.getStats(),
       queryRepo.getStats(),
     ]);
-    return { faqs: faqStats, queries: queryStats };
+
+    return {
+      users: { total: userStats.total },
+      faqs: faqStats,
+      queries: {
+        ...queryStats,
+        total: Object.values(queryStats).reduce((sum, count) => sum + count, 0),
+        adminReview: queryStats["admin-review"] ?? 0,
+      },
+    };
   }
 }
