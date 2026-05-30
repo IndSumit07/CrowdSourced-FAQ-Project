@@ -8,7 +8,7 @@ const envSchema = z.object({
 
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
 
-  // Upstash Redis — use individual fields or a full rediss:// URL
+  // Redis settings are currently disabled; kept optional for future re-enable
   UPSTASH_REDIS_URL: z.string().optional(),
   UPSTASH_REDIS_HOST: z.string().optional(),
   UPSTASH_REDIS_PORT: z.coerce.number().int().positive().default(6379),

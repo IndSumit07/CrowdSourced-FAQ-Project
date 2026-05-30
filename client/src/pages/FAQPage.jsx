@@ -1,12 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { faqService } from "../services/api";
+import { faqService, sectionService } from "../services/api";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Skeleton } from "../components/ui/Skeleton";
 
 const FAQPage = () => {
   const [search, setSearch] = useState("");
   const [openIds, setOpenIds] = useState(() => new Set());
+
+  const { data: sections } = useQuery({
+    queryKey: ["sections"],
+    queryFn: async () => {
+      const res = await sectionService.getAll();
+      return res.data.data.sections || [];
+    },
+  });
 
   const fetchAllPages = async (fetchPage) => {
     const firstRes = await fetchPage(1);
@@ -42,6 +50,10 @@ const FAQPage = () => {
   const faqs = data?.docs || data || [];
 
   const groupedFaqs = useMemo(() => {
+    const sectionMap = new Map((sections || []).map((s) => [String(s._id), s.title]));
+    const getTagValue = (tags, prefix) =>
+      tags?.find((tag) => tag.startsWith(prefix))?.replace(prefix, "");
+
     const parseQuestionId = (id) =>
       id
         .split(".")
@@ -60,28 +72,35 @@ const FAQPage = () => {
       }
       return 0;
     };
-    const getTagValue = (tags, prefix) =>
-      tags?.find((tag) => tag.startsWith(prefix))?.replace(prefix, "");
 
     const groups = new Map();
     faqs.forEach((faq) => {
-      const sectionTitle =
-        getTagValue(faq.tags, "section:")
-          ?.split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ") || "General";
-      const sectionId = Number(getTagValue(faq.tags, "section-id:") || 999);
-      const questionId = getTagValue(faq.tags, "qid:") || "";
+      let sectionTitle = null;
+      let sectionOrder = 999;
 
-      if (!groups.has(sectionTitle)) {
-        groups.set(sectionTitle, { sectionTitle, sectionId, items: [] });
+      if (faq.section) {
+        sectionTitle = sectionMap.get(String(faq.section)) || null;
       }
 
+      if (!sectionTitle) {
+        sectionTitle =
+          getTagValue(faq.tags, "section:")
+            ?.split("-")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ") || "General";
+        sectionOrder = Number(getTagValue(faq.tags, "section-id:") || 999);
+      }
+
+      if (!groups.has(sectionTitle)) {
+        groups.set(sectionTitle, { sectionTitle, sectionOrder, items: [] });
+      }
+
+      const questionId = getTagValue(faq.tags, "qid:") || "";
       groups.get(sectionTitle).items.push({ ...faq, questionId });
     });
 
     return Array.from(groups.values())
-      .sort((a, b) => a.sectionId - b.sectionId)
+      .sort((a, b) => a.sectionOrder - b.sectionOrder)
       .map((group) => ({
         ...group,
         items: group.items.sort((a, b) => {
@@ -90,7 +109,7 @@ const FAQPage = () => {
           return a.title.localeCompare(b.title);
         }),
       }));
-  }, [faqs]);
+  }, [faqs, sections]);
 
   const toggleOpen = (id) => {
     setOpenIds((prev) => {

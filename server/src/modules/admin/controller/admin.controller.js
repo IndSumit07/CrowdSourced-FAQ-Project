@@ -7,12 +7,18 @@ const adminService = new AdminService();
 export class AdminController {
   // Query Management
   getPendingReviewQueries = asyncHandler(async (req, res) => {
-    const { queries, total } = await adminService.getPendingReviewQueries(req.query);
+    const { queries, total } = await adminService.getPendingReviewQueries(
+      req.query,
+    );
     return ApiResponse.success(res, { queries, total });
   });
 
   publishQueryToFAQ = asyncHandler(async (req, res) => {
-    const faq = await adminService.publishQueryToFAQ(req.params.id, req.user.id, req.body);
+    const faq = await adminService.publishQueryToFAQ(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     return ApiResponse.success(res, { faq }, "FAQ published successfully");
   });
 
@@ -23,12 +29,20 @@ export class AdminController {
   });
 
   approveFAQ = asyncHandler(async (req, res) => {
-    const faq = await adminService.approveFAQ(req.params.id, req.user.id);
+    const faq = await adminService.approveFAQ(
+      req.params.id,
+      req.user.id,
+      req.body.sectionId,
+    );
     return ApiResponse.success(res, { faq }, "FAQ approved and published");
   });
 
   editAndApproveFAQ = asyncHandler(async (req, res) => {
-    const faq = await adminService.editAndApproveFAQ(req.params.id, req.user.id, req.body);
+    const faq = await adminService.editAndApproveFAQ(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     return ApiResponse.success(res, { faq }, "FAQ edited and published");
   });
 
@@ -44,7 +58,10 @@ export class AdminController {
   });
 
   updateUserRole = asyncHandler(async (req, res) => {
-    const user = await adminService.updateUserRole(req.params.userId, req.body.role);
+    const user = await adminService.updateUserRole(
+      req.params.userId,
+      req.body.role,
+    );
     return ApiResponse.success(res, { user }, "User role updated");
   });
 

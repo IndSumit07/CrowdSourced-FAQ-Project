@@ -5,6 +5,7 @@ import {
 import { FAQService } from "../../faq/service/faq.service.js";
 import { EmbeddingService } from "../../ai/service/embedding.service.js";
 import { AIValidationService } from "../../ai/service/aiValidation.service.js";
+import { QueryExpiryService } from "./query.expiry.service.js";
 import { deadlineQueue } from "../../queues/deadline.queue.js";
 import {
   buildPagination,
@@ -23,6 +24,7 @@ import { logger } from "../../../utils/logger.js";
 
 const queryRepo = new QueryRepository();
 const responseRepo = new ContributorResponseRepository();
+const queryExpiryService = new QueryExpiryService();
 
 export class QueryService {
   #faqService;
@@ -151,6 +153,7 @@ export class QueryService {
   }
 
   async getOpenFeed(params) {
+    await queryExpiryService.sweepExpiredQueries();
     const { page, limit, skip } = buildPagination(params.page, params.limit);
     const { queries, total } = await queryRepo.findOpenQueries({
       page,

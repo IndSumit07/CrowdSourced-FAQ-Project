@@ -2,6 +2,51 @@ import { getAIProvider } from "../providers/provider.factory.js";
 import { aiConfig } from "../../../configs/ai.config.js";
 import { logger } from "../../../utils/logger.js";
 
+const VALID_QUERY_CATEGORIES = new Set([
+  "internship",
+  "placement",
+  "resume",
+  "dsa",
+  "coding-interview",
+  "career",
+  "general",
+]);
+
+const CATEGORY_ALIASES = new Map([
+  ["career guidance", "career"],
+  ["career-guidance", "career"],
+  ["job search", "career"],
+  ["job-search", "career"],
+  ["interview prep", "coding-interview"],
+  ["interview-prep", "coding-interview"],
+]);
+
+export const normalizeQueryCategory = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return "general";
+  if (VALID_QUERY_CATEGORIES.has(normalized)) return normalized;
+  if (CATEGORY_ALIASES.has(normalized)) return CATEGORY_ALIASES.get(normalized);
+
+  const compact = normalized.replace(/\s+/g, "-");
+  if (VALID_QUERY_CATEGORIES.has(compact)) return compact;
+  if (CATEGORY_ALIASES.has(compact)) return CATEGORY_ALIASES.get(compact);
+
+  return "general";
+};
+
+export const sanitizeAiGeneratedText = (value) => {
+  if (value === null || value === undefined) return "";
+
+  return String(value)
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const VALIDATION_SYSTEM_PROMPT = `You are an intelligent content moderator for an internship and career Q&A platform.
 
 Your task is to classify whether a user's question is RELEVANT or IRRELEVANT to the platform's allowed domains.
@@ -54,10 +99,13 @@ export class AIValidationService {
     try {
       const raw = await this.#provider.generateText(
         VALIDATION_SYSTEM_PROMPT,
-        `Question: "${question}"`
+        `Question: "${question}"`,
       );
 
-      const cleaned = raw.trim().replace(/```json|```/g, "").trim();
+      const cleaned = raw
+        .trim()
+        .replace(/```json|```/g, "")
+        .trim();
       const result = JSON.parse(cleaned);
 
       logger.debug({
@@ -70,12 +118,20 @@ export class AIValidationService {
         relevant: Boolean(result.relevant),
         confidence: parseFloat(result.confidence) || 0,
         reason: result.reason || "",
-        category: result.category || "general",
+        category: normalizeQueryCategory(result.category),
       };
     } catch (err) {
-      logger.warn({ msg: "Relevance validation failed, defaulting to relevant", err: err.message });
+      logger.warn({
+        msg: "Relevance validation failed, defaulting to relevant",
+        err: err.message,
+      });
       // Fail open — don't block users on AI failures
-      return { relevant: true, confidence: 0.5, reason: "Validation unavailable", category: "general" };
+      return {
+        relevant: true,
+        confidence: 0.5,
+        reason: "Validation unavailable",
+        category: "general",
+      };
     }
   }
 
@@ -92,7 +148,12 @@ export class AIValidationService {
 
     const userMessage = `Question: "${question}"\n\nContributor Answers:\n${answersText}`;
 
-    return this.#provider.generateText(SUMMARIZATION_SYSTEM_PROMPT, userMessage);
+    const summary = await this.#provider.generateText(
+      SUMMARIZATION_SYSTEM_PROMPT,
+      userMessage,
+    );
+
+    return sanitizeAiGeneratedText(summary);
   }
 
   /**
@@ -102,15 +163,26 @@ export class AIValidationService {
   async draftFAQ(question, synthesizedAnswer) {
     try {
       const userMessage = `Question: "${question}"\n\nSynthesized Answer: "${synthesizedAnswer}"`;
-      const raw = await this.#provider.generateText(FAQ_DRAFT_SYSTEM_PROMPT, userMessage);
-      const cleaned = raw.trim().replace(/```json|```/g, "").trim();
-      return JSON.parse(cleaned);
+      const raw = await this.#provider.generateText(
+        FAQ_DRAFT_SYSTEM_PROMPT,
+        userMessage,
+      );
+      const cleaned = raw
+        .trim()
+        .replace(/```json|```/g, "")
+        .trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        ...parsed,
+        title: sanitizeAiGeneratedText(parsed.title),
+        answer: sanitizeAiGeneratedText(parsed.answer),
+      };
     } catch (err) {
       logger.warn({ msg: "FAQ drafting failed", err: err.message });
       // Fallback draft
       return {
         title: question,
-        answer: synthesizedAnswer,
+        answer: sanitizeAiGeneratedText(synthesizedAnswer),
         category: "general",
         tags: [],
       };

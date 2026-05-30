@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { queryClient } from "@/lib/queryClient";
 import {
   getSocket,
   SOCKET_EVENTS,
@@ -85,7 +86,9 @@ export const useSocketEvents = () => {
 
     socket.on(SOCKET_EVENTS.QUERY_REMOVED, (data) => {
       removeQuery(data.queryId);
-      toast("⚑ Query removed for receiving too many flags.", { duration: 4000 });
+      toast("⚑ Query removed for receiving too many flags.", {
+        duration: 4000,
+      });
     });
 
     // ─── FAQ events ───────────────────────────────────────────────
@@ -97,6 +100,8 @@ export const useSocketEvents = () => {
 
     socket.on(SOCKET_EVENTS.FAQ_PENDING_REVIEW, (data) => {
       if (user.role === "admin") {
+        queryClient.invalidateQueries({ queryKey: ["pending-review-queries"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
         addNotification({
           type: "faq_draft",
           message: `New FAQ draft ready: "${data.title?.slice(0, 60)}"`,
@@ -125,6 +130,8 @@ export const useSocketEvents = () => {
     // ─── Admin notifications ──────────────────────────────────────
     socket.on(SOCKET_EVENTS.ADMIN_NOTIFICATION, (data) => {
       if (user.role === "admin") {
+        queryClient.invalidateQueries({ queryKey: ["pending-review-queries"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
         addNotification({
           ...data,
           read: false,

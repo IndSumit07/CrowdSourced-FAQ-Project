@@ -6,17 +6,11 @@ import mongoose from "mongoose";
 import { connectDB, disconnectDB } from "../src/configs/mongodb.config.js";
 import { EmbeddingService } from "../src/modules/ai/service/embedding.service.js";
 import { FAQ } from "../src/modules/faq/schema/faq.schema.js";
+import { Section } from "../src/modules/faq/schema/section.schema.js";
 import { User } from "../src/modules/users/schema/user.schema.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const slugify = (value) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -65,13 +59,7 @@ const mapCategory = (sectionTitle) => {
   return "general";
 };
 
-const buildTags = (faq) => {
-  const tags = [];
-  if (faq.section_title) tags.push(`section:${slugify(faq.section_title)}`);
-  if (faq.section_id !== undefined) tags.push(`section-id:${faq.section_id}`);
-  if (faq.question_id) tags.push(`qid:${faq.question_id}`);
-  return tags;
-};
+const normalizeSectionTitle = (value) => value?.trim() || "General";
 
 const buildEmbeddingText = (faq) => `${faq.question}\n${faq.answer}`.trim();
 
@@ -102,10 +90,42 @@ const seedFaqs = async () => {
   const admin = await ensureAdminUser(adminCredentials);
   const embeddingService = new EmbeddingService();
 
+  const uniqueSections = [
+    ...new Map(
+      faqs.map((faq) => {
+        const title = normalizeSectionTitle(faq.section_title);
+        const order = Number.isFinite(Number(faq.section_id))
+          ? Number(faq.section_id)
+          : 0;
+        return [title, { title, order }];
+      }),
+    ).values(),
+  ];
+
+  await FAQ.deleteMany({});
+
+  for (const section of uniqueSections) {
+    await Section.findOneAndUpdate(
+      { title: section.title },
+      { $setOnInsert: { title: section.title, order: section.order } },
+      { upsert: true, new: true },
+    );
+  }
+
+  const sectionDocs = await Section.find().lean();
+  const sectionMap = new Map(
+    sectionDocs.map((section) => [section.title, section]),
+  );
+
   let inserted = 0;
-  let matched = 0;
 
   for (const faq of faqs) {
+    const sectionTitle = normalizeSectionTitle(faq.section_title);
+    const section = sectionMap.get(sectionTitle);
+    if (!section) {
+      throw new Error(`Missing section record for "${sectionTitle}"`);
+    }
+
     const embedding = await embedWithRetry(
       embeddingService,
       buildEmbeddingText(faq),
@@ -114,33 +134,26 @@ const seedFaqs = async () => {
 
     const title = faq.question.trim();
     const answer = faq.answer.trim();
-    const tags = buildTags(faq);
 
-    const result = await FAQ.updateOne(
-      { tags: { $in: [`qid:${faq.question_id}`] } },
-      {
-        $setOnInsert: {
-          title,
-          answer,
-          category: mapCategory(faq.section_title),
-          tags,
-          embedding,
-          published: true,
-          publishedAt: new Date(),
-          createdBy: admin._id,
-          approvedBy: admin._id,
-          aiGenerated: false,
-          editedByAdmin: true,
-        },
-      },
-      { upsert: true },
-    );
+    await FAQ.create({
+      title,
+      answer,
+      category: mapCategory(sectionTitle),
+      section: section._id,
+      tags: [sectionTitle],
+      embedding,
+      published: true,
+      publishedAt: new Date(),
+      createdBy: admin._id,
+      approvedBy: admin._id,
+      aiGenerated: false,
+      editedByAdmin: true,
+    });
 
-    inserted += result.upsertedCount || 0;
-    matched += result.matchedCount || 0;
+    inserted += 1;
   }
 
-  return { inserted, matched };
+  return { inserted, matched: 0 };
 };
 
 const run = async () => {

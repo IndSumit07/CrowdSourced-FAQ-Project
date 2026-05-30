@@ -1,34 +1,56 @@
-import { Queue, Worker } from "bullmq";
-import { bullMQRedisConnection } from "../../configs/redis.config.js";
 import { queueConfig } from "../../configs/queue.config.js";
 import { logger } from "../../utils/logger.js";
+import { randomUUID } from "crypto";
 
-// ─── Deadline Queue ────────────────────────────────────────────────────────────
+const createDisabledQueue = (queueName) => ({
+  async add(jobName, data, options = {}) {
+    const jobId = options.jobId || `${queueName}:${jobName}:${randomUUID()}`;
+    logger.warn({
+      msg: "Queue job skipped because Redis is disconnected",
+      queue: queueName,
+      jobName,
+      jobId,
+    });
+    return { id: jobId, name: jobName, data, opts: options };
+  },
 
-export const deadlineQueue = new Queue(queueConfig.queues.deadlineProcessor, {
-  connection: bullMQRedisConnection,
-  defaultJobOptions: queueConfig.defaultJobOptions,
+  async remove(jobId) {
+    logger.warn({
+      msg: "Queue job removal skipped because Redis is disconnected",
+      queue: queueName,
+      jobId,
+    });
+    return true;
+  },
+
+  async close() {
+    return undefined;
+  },
+
+  on() {
+    return this;
+  },
 });
 
-// ─── AI Summarization Queue ────────────────────────────────────────────────────
+// ─── Disabled queues while Redis is disconnected ───────────────────────────────
 
-export const aiSummarizationQueue = new Queue(queueConfig.queues.aiSummarization, {
-  connection: bullMQRedisConnection,
-  defaultJobOptions: queueConfig.defaultJobOptions,
+export const deadlineQueue = createDisabledQueue(
+  queueConfig.queues.deadlineProcessor,
+);
+
+export const aiSummarizationQueue = createDisabledQueue(
+  queueConfig.queues.aiSummarization,
+);
+
+export const faqGenerationQueue = createDisabledQueue(
+  queueConfig.queues.faqGeneration,
+);
+
+export const notificationQueue = createDisabledQueue(
+  queueConfig.queues.notifications,
+);
+
+logger.info({
+  msg: "BullMQ queues disabled while Redis is disconnected",
+  queues: Object.values(queueConfig.queues),
 });
-
-// ─── FAQ Generation Queue ──────────────────────────────────────────────────────
-
-export const faqGenerationQueue = new Queue(queueConfig.queues.faqGeneration, {
-  connection: bullMQRedisConnection,
-  defaultJobOptions: queueConfig.defaultJobOptions,
-});
-
-// ─── Notification Queue ────────────────────────────────────────────────────────
-
-export const notificationQueue = new Queue(queueConfig.queues.notifications, {
-  connection: bullMQRedisConnection,
-  defaultJobOptions: { ...queueConfig.defaultJobOptions, attempts: 5 },
-});
-
-logger.info({ msg: "BullMQ queues initialized", queues: Object.values(queueConfig.queues) });

@@ -40,10 +40,12 @@ export const contributorService = {
 export const adminService = {
   getStats: () => api.get("/admin/stats"),
   getTopContributors: () => api.get("/admin/top-contributors"),
-  getPendingReviewQueries: (params) => api.get("/admin/queries/pending-review", { params }),
-  publishQueryToFAQ: (id, data) => api.post(`/admin/queries/${id}/publish-faq`, data),
+  getPendingReviewQueries: (params) =>
+    api.get("/admin/queries/pending-review", { params }),
+  publishQueryToFAQ: (id, data) =>
+    api.post(`/admin/queries/${id}/publish-faq`, data),
   getPendingFAQs: (params) => api.get("/admin/faqs/pending", { params }),
-  approveFAQ: (id) => api.post(`/admin/faqs/${id}/approve`),
+  approveFAQ: (id, data) => api.post(`/admin/faqs/${id}/approve`, data),
   editAndApproveFAQ: (id, data) =>
     api.put(`/admin/faqs/${id}/edit-approve`, data),
   rejectFAQ: (id, reason) =>

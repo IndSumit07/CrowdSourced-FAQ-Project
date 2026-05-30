@@ -1,15 +1,31 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminService, sectionService } from '../../services/api';
-import { StatsGridSkeleton, PendingQueriesSkeleton, PendingFAQsSkeleton } from '../../components/skeleton-loaders';
-import toast from 'react-hot-toast';
-import { CheckCircle2, XCircle, Send, Users, MessageSquare, CheckSquare, Clock, AlertCircle, Bot, Plus, Folder } from 'lucide-react';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminService, sectionService } from "../../services/api";
+import {
+  StatsGridSkeleton,
+  PendingQueriesSkeleton,
+  PendingFAQsSkeleton,
+} from "../../components/skeleton-loaders";
+import toast from "react-hot-toast";
+import {
+  CheckCircle2,
+  XCircle,
+  Send,
+  Users,
+  MessageSquare,
+  CheckSquare,
+  Clock,
+  AlertCircle,
+  Bot,
+  Plus,
+  Folder,
+} from "lucide-react";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['admin-stats'],
+    queryKey: ["admin-stats"],
     queryFn: async () => {
       const res = await adminService.getStats();
       // getDashboardStats returns { stats: { faqs: {...}, queries: {...} } }
@@ -19,7 +35,7 @@ const AdminDashboard = () => {
   });
 
   const { data: pendingFAQs, isLoading: faqsLoading } = useQuery({
-    queryKey: ['pending-faqs'],
+    queryKey: ["pending-faqs"],
     queryFn: async () => {
       const res = await adminService.getPendingFAQs();
       // Server returns { faqs: [...], total: N } — extract the array
@@ -29,7 +45,7 @@ const AdminDashboard = () => {
   });
 
   const { data: pendingQueries, isLoading: queriesLoading } = useQuery({
-    queryKey: ['pending-review-queries'],
+    queryKey: ["pending-review-queries"],
     queryFn: async () => {
       const res = await adminService.getPendingReviewQueries();
       const payload = res.data.data;
@@ -43,13 +59,15 @@ const AdminDashboard = () => {
   const [finalAnswer, setFinalAnswer] = useState({});
   // Track selected section per query
   const [selectedSection, setSelectedSection] = useState({});
+  // Track selected section per pending FAQ
+  const [selectedPendingSection, setSelectedPendingSection] = useState({});
   // Track "create new section" input per query
   const [newSectionName, setNewSectionName] = useState({});
   // Track whether to show new section input per query
   const [showNewSectionInput, setShowNewSectionInput] = useState({});
 
   const { data: sections } = useQuery({
-    queryKey: ['sections'],
+    queryKey: ["sections"],
     queryFn: async () => {
       const res = await sectionService.getAll();
       return res.data.data.sections || [];
@@ -60,25 +78,29 @@ const AdminDashboard = () => {
     mutationFn: (title) => sectionService.create({ title }),
     onSuccess: (res) => {
       const section = res.data.data.section;
-      queryClient.invalidateQueries({ queryKey: ['sections'] });
+      queryClient.invalidateQueries({ queryKey: ["sections"] });
       toast.success(`Section "${section.title}" created`);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to create section'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to create section"),
   });
 
   const handleSelectAnswer = (queryId, ans) => {
-    setSelectedResponse(prev => ({ ...prev, [queryId]: { id: ans._id, answer: ans.answer } }));
+    setSelectedResponse((prev) => ({
+      ...prev,
+      [queryId]: { id: ans._id, answer: ans.answer },
+    }));
     // Only pre-fill if no custom text has been typed
-    setFinalAnswer(prev => ({ ...prev, [queryId]: ans.answer }));
+    setFinalAnswer((prev) => ({ ...prev, [queryId]: ans.answer }));
   };
 
   const handleUnselectAnswer = (queryId) => {
-    setSelectedResponse(prev => {
+    setSelectedResponse((prev) => {
       const next = { ...prev };
       delete next[queryId];
       return next;
     });
-    setFinalAnswer(prev => {
+    setFinalAnswer((prev) => {
       const next = { ...prev };
       delete next[queryId];
       return next;
@@ -86,13 +108,16 @@ const AdminDashboard = () => {
   };
 
   const handleSelectAiAnswer = (queryId, aiAnswer) => {
-    setSelectedResponse(prev => ({ ...prev, [queryId]: { id: null, answer: aiAnswer } }));
-    setFinalAnswer(prev => ({ ...prev, [queryId]: aiAnswer }));
+    setSelectedResponse((prev) => ({
+      ...prev,
+      [queryId]: { id: null, answer: aiAnswer },
+    }));
+    setFinalAnswer((prev) => ({ ...prev, [queryId]: aiAnswer }));
   };
 
   const handleSelectSection = (queryId, sectionId) => {
-    setSelectedSection(prev => ({ ...prev, [queryId]: sectionId }));
-    setShowNewSectionInput(prev => ({ ...prev, [queryId]: false }));
+    setSelectedSection((prev) => ({ ...prev, [queryId]: sectionId }));
+    setShowNewSectionInput((prev) => ({ ...prev, [queryId]: false }));
   };
 
   const handleCreateNewSection = (queryId) => {
@@ -101,9 +126,13 @@ const AdminDashboard = () => {
     createSectionMutation.mutate(name, {
       onSuccess: (res) => {
         const section = res.data.data.section;
-        setSelectedSection(prev => ({ ...prev, [queryId]: section._id }));
-        setNewSectionName(prev => { const n = { ...prev }; delete n[queryId]; return n; });
-        setShowNewSectionInput(prev => ({ ...prev, [queryId]: false }));
+        setSelectedSection((prev) => ({ ...prev, [queryId]: section._id }));
+        setNewSectionName((prev) => {
+          const n = { ...prev };
+          delete n[queryId];
+          return n;
+        });
+        setShowNewSectionInput((prev) => ({ ...prev, [queryId]: false }));
       },
     });
   };
@@ -111,37 +140,44 @@ const AdminDashboard = () => {
   const publishQueryMutation = useMutation({
     mutationFn: ({ id, data }) => adminService.publishQueryToFAQ(id, data),
     onSuccess: () => {
-      toast.success('Query Published as FAQ successfully!');
-      queryClient.invalidateQueries({ queryKey: ['pending-review-queries'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      toast.success("Query Published as FAQ successfully!");
+      queryClient.invalidateQueries({ queryKey: ["pending-review-queries"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to publish query'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to publish query"),
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id) => adminService.approveFAQ(id),
+    mutationFn: ({ id, data }) => adminService.approveFAQ(id, data),
     onSuccess: () => {
-      toast.success('FAQ Published successfully!');
-      queryClient.invalidateQueries(['pending-faqs']);
-      queryClient.invalidateQueries(['admin-stats']);
+      toast.success("FAQ Published successfully!");
+      queryClient.invalidateQueries(["pending-faqs"]);
+      queryClient.invalidateQueries(["admin-stats"]);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to approve FAQ'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to approve FAQ"),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id) => adminService.rejectFAQ(id, 'Admin rejected draft'),
+    mutationFn: (id) => adminService.rejectFAQ(id, "Admin rejected draft"),
     onSuccess: () => {
-      toast.success('FAQ Draft rejected.');
-      queryClient.invalidateQueries(['pending-faqs']);
+      toast.success("FAQ Draft rejected.");
+      queryClient.invalidateQueries(["pending-faqs"]);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to reject FAQ'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to reject FAQ"),
   });
 
   return (
     <div className="w-full">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-900 font-display mb-2 tracking-tight">Admin Dashboard</h1>
-        <p className="text-stone-500 text-sm">Platform overview and content moderation</p>
+        <h1 className="text-3xl font-bold text-stone-900 font-display mb-2 tracking-tight">
+          Admin Dashboard
+        </h1>
+        <p className="text-stone-500 text-sm">
+          Platform overview and content moderation
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -152,34 +188,51 @@ const AdminDashboard = () => {
           <>
             <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Total Users</p>
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">
+                  Total Users
+                </p>
                 <Users className="w-5 h-5 text-teal-600" />
               </div>
-              <p className="text-4xl font-display font-bold text-stone-900">{stats?.users?.total ?? stats?.totalUsers ?? '—'}</p>
-            </div>
-            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Total Queries</p>
-                <MessageSquare className="w-5 h-5 text-amber-600" />
-              </div>
               <p className="text-4xl font-display font-bold text-stone-900">
-                {Object.values(stats?.queries ?? {}).reduce((a, b) => a + b, 0) || stats?.totalQueries || '—'}
+                {stats?.users?.total ?? stats?.totalUsers ?? "—"}
               </p>
             </div>
             <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">Published FAQs</p>
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">
+                  Total Queries
+                </p>
+                <MessageSquare className="w-5 h-5 text-amber-600" />
+              </div>
+              <p className="text-4xl font-display font-bold text-stone-900">
+                {Object.values(stats?.queries ?? {}).reduce(
+                  (a, b) => a + b,
+                  0,
+                ) ||
+                  stats?.totalQueries ||
+                  "—"}
+              </p>
+            </div>
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-stone-500 text-[11px] font-bold uppercase tracking-widest">
+                  Published FAQs
+                </p>
                 <CheckSquare className="w-5 h-5 text-emerald-600" />
               </div>
-              <p className="text-4xl font-display font-bold text-stone-900">{stats?.faqs?.published ?? stats?.publishedFaqs ?? '—'}</p>
+              <p className="text-4xl font-display font-bold text-stone-900">
+                {stats?.faqs?.published ?? stats?.publishedFaqs ?? "—"}
+              </p>
             </div>
             <div className="bg-white border border-red-100 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-red-500 text-[11px] font-bold uppercase tracking-widest">Pending Review</p>
+                <p className="text-red-500 text-[11px] font-bold uppercase tracking-widest">
+                  Pending Review
+                </p>
                 <Clock className="w-5 h-5 text-red-500" />
               </div>
               <p className="text-4xl font-display font-bold text-red-600">
-                {stats?.faqs?.pending ?? pendingFAQs?.length ?? '—'}
+                {stats?.faqs?.pending ?? pendingFAQs?.length ?? "—"}
               </p>
             </div>
           </>
@@ -189,8 +242,13 @@ const AdminDashboard = () => {
       {/* Pending Review Queries section */}
       <div className="mb-6 mt-12 border-b border-stone-100 pb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">Pending Review (Expired Queries)</h2>
-          <p className="text-sm text-stone-500 mt-1">Select the best contributor answer, edit if needed, then publish to the FAQ database</p>
+          <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
+            Pending Review (Expired Queries)
+          </h2>
+          <p className="text-sm text-stone-500 mt-1">
+            Select the best contributor answer, edit if needed, then publish to
+            the FAQ database
+          </p>
         </div>
       </div>
 
@@ -199,18 +257,25 @@ const AdminDashboard = () => {
       ) : pendingQueries?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 border border-dashed border-stone-200 rounded-3xl bg-white shadow-sm">
           <CheckSquare className="w-12 h-12 text-stone-300 mb-4" />
-          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">No expired queries pending review.</p>
-          <p className="text-stone-400 text-sm mt-1">You're all caught up here.</p>
+          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">
+            No expired queries pending review.
+          </p>
+          <p className="text-stone-400 text-sm mt-1">
+            You're all caught up here.
+          </p>
         </div>
       ) : (
         <div className="grid gap-6 mb-12">
           {pendingQueries?.map((query) => {
             const sel = selectedResponse[query._id];
-            const currentAnswer = finalAnswer[query._id] || '';
+            const currentAnswer = finalAnswer[query._id] || "";
             const hasAnswers = query.answers?.length > 0;
 
             return (
-              <div key={query._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div
+                key={query._id}
+                className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]"
+              >
                 <div className="flex gap-2 mb-4">
                   <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
                     {query.category}
@@ -220,8 +285,10 @@ const AdminDashboard = () => {
                     admin-review
                   </span>
                 </div>
-                
-                <h3 className="text-xl font-bold text-stone-900 mb-5 font-display tracking-tight leading-snug">{query.question}</h3>
+
+                <h3 className="text-xl font-bold text-stone-900 mb-5 font-display tracking-tight leading-snug">
+                  {query.question}
+                </h3>
 
                 {/* AI Generated Answer */}
                 {query.aiSynthesizedAnswer && (
@@ -231,31 +298,51 @@ const AdminDashboard = () => {
                       AI Summary (No reputation awarded)
                     </h4>
                     <div
-                      onClick={() => handleSelectAiAnswer(query._id, query.aiSynthesizedAnswer)}
+                      onClick={() =>
+                        handleSelectAiAnswer(
+                          query._id,
+                          query.aiSynthesizedAnswer,
+                        )
+                      }
                       className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                         sel?.id === null
-                          ? 'border-purple-500 bg-purple-50 shadow-sm'
-                          : 'border-purple-200 bg-purple-50/50 hover:border-purple-400'
+                          ? "border-purple-500 bg-purple-50 shadow-sm"
+                          : "border-purple-200 bg-purple-50/50 hover:border-purple-400"
                       }`}
                     >
                       {sel?.id === null && (
                         <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                           Selected
                         </span>
                       )}
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-linear-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
                           AI
                         </div>
-                        <span className="text-xs font-bold text-purple-700">AI Generated</span>
+                        <span className="text-xs font-bold text-purple-700">
+                          AI Generated
+                        </span>
                         <span className="ml-auto text-[10px] font-bold text-purple-400 uppercase tracking-wider">
                           Synthesized
                         </span>
                       </div>
-                      <p className="text-stone-700 text-sm leading-relaxed">{query.aiSynthesizedAnswer}</p>
+                      <p className="text-stone-700 text-sm leading-relaxed">
+                        {query.aiSynthesizedAnswer}
+                      </p>
                       {sel?.id !== null && (
                         <p className="text-[10px] text-purple-600 font-bold mt-2 uppercase tracking-wider">
                           Click to select this AI answer
@@ -281,15 +368,26 @@ const AdminDashboard = () => {
                           onClick={() => handleSelectAnswer(query._id, ans)}
                           className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? 'border-[#0D9488] bg-teal-50 shadow-sm'
-                              : 'border-stone-200 bg-stone-50 hover:border-teal-300 hover:bg-teal-50/30'
+                              ? "border-[#0D9488] bg-teal-50 shadow-sm"
+                              : "border-stone-200 bg-stone-50 hover:border-teal-300 hover:bg-teal-50/30"
                           }`}
                         >
                           {/* Selected badge */}
                           {isSelected && (
                             <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-[#0D9488] text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                               Selected
                             </span>
@@ -297,11 +395,11 @@ const AdminDashboard = () => {
 
                           {/* Contributor info row */}
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
-                              {(ans.contributor?.name || 'C').charAt(0)}
+                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                              {(ans.contributor?.name || "C").charAt(0)}
                             </div>
                             <span className="text-xs font-bold text-stone-700">
-                              {ans.contributor?.name || 'Contributor'}
+                              {ans.contributor?.name || "Contributor"}
                             </span>
                             {ans.contributor?.reputation !== undefined && (
                               <span className="text-[10px] text-stone-400 font-semibold">
@@ -312,17 +410,23 @@ const AdminDashboard = () => {
                               Answer {idx + 1}
                             </span>
                             {ans.confidence && (
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                ans.confidence >= 4 ? 'bg-green-100 text-green-700' :
-                                ans.confidence >= 3 ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  ans.confidence >= 4
+                                    ? "bg-green-100 text-green-700"
+                                    : ans.confidence >= 3
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-red-100 text-red-700"
+                                }`}
+                              >
                                 Confidence {ans.confidence}/5
                               </span>
                             )}
                           </div>
 
-                          <p className="text-stone-700 text-sm leading-relaxed">{ans.answer}</p>
+                          <p className="text-stone-700 text-sm leading-relaxed">
+                            {ans.answer}
+                          </p>
 
                           {!isSelected && (
                             <p className="text-[10px] text-teal-600 font-bold mt-2 uppercase tracking-wider">
@@ -334,8 +438,13 @@ const AdminDashboard = () => {
                     })
                   ) : (
                     <div className="p-4 rounded-xl border border-dashed border-stone-200 bg-stone-50 text-center">
-                      <p className="text-sm text-stone-500 italic">No answers submitted by contributors.</p>
-                      <p className="text-xs text-stone-400 mt-1">You can still write a custom answer below and publish it.</p>
+                      <p className="text-sm text-stone-500 italic">
+                        No answers submitted by contributors.
+                      </p>
+                      <p className="text-xs text-stone-400 mt-1">
+                        You can still write a custom answer below and publish
+                        it.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -343,11 +452,24 @@ const AdminDashboard = () => {
                 {/* Reputation reward notice */}
                 {sel && sel.id !== null && (
                   <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-amber-500 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                      />
                     </svg>
                     <p className="text-xs font-bold text-amber-800">
-                      The selected contributor will earn <span className="text-amber-600">+10 reputation</span> when you publish this answer.
+                      The selected contributor will earn{" "}
+                      <span className="text-amber-600">+10 reputation</span>{" "}
+                      when you publish this answer.
                     </p>
                     <button
                       onClick={() => handleUnselectAnswer(query._id)}
@@ -362,7 +484,8 @@ const AdminDashboard = () => {
                   <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl">
                     <Bot className="h-4 w-4 text-purple-500 shrink-0" />
                     <p className="text-xs font-bold text-purple-800">
-                      AI answer selected — no reputation will be awarded to any contributor.
+                      AI answer selected — no reputation will be awarded to any
+                      contributor.
                     </p>
                     <button
                       onClick={() => handleUnselectAnswer(query._id)}
@@ -379,14 +502,21 @@ const AdminDashboard = () => {
                   <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
                     <MessageSquare className="h-4 w-4 text-stone-400" />
                     Final Answer
-                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">(edit before publishing)</span>
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">
+                      (edit before publishing)
+                    </span>
                   </h4>
                   <textarea
                     className="w-full bg-white border border-stone-300 rounded-xl p-4 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
                     rows={5}
                     placeholder="Select an answer above or type the final answer here..."
                     value={currentAnswer}
-                    onChange={(e) => setFinalAnswer(prev => ({ ...prev, [query._id]: e.target.value }))}
+                    onChange={(e) =>
+                      setFinalAnswer((prev) => ({
+                        ...prev,
+                        [query._id]: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -395,7 +525,9 @@ const AdminDashboard = () => {
                   <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
                     <Folder className="h-4 w-4 text-stone-400" />
                     Section
-                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">(where this FAQ will appear)</span>
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">
+                      (where this FAQ will appear)
+                    </span>
                   </h4>
 
                   {/* Show toggle for existing vs new section input */}
@@ -404,15 +536,24 @@ const AdminDashboard = () => {
                       <select
                         className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
                         value={selectedSection[query._id] || ""}
-                        onChange={(e) => handleSelectSection(query._id, e.target.value || null)}
+                        onChange={(e) =>
+                          handleSelectSection(query._id, e.target.value || null)
+                        }
                       >
                         <option value="">— No section —</option>
                         {sections?.map((s) => (
-                          <option key={s._id} value={s._id}>{s.title}</option>
+                          <option key={s._id} value={s._id}>
+                            {s.title}
+                          </option>
                         ))}
                       </select>
                       <button
-                        onClick={() => setShowNewSectionInput(prev => ({ ...prev, [query._id]: true }))}
+                        onClick={() =>
+                          setShowNewSectionInput((prev) => ({
+                            ...prev,
+                            [query._id]: true,
+                          }))
+                        }
                         className="flex items-center gap-1.5 px-4 py-3 border border-stone-300 hover:border-teal-400 text-stone-600 hover:text-teal-600 rounded-xl text-sm font-bold transition-colors"
                         title="Create new section"
                       >
@@ -427,7 +568,12 @@ const AdminDashboard = () => {
                         placeholder="Enter section title..."
                         className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
                         value={newSectionName[query._id] || ""}
-                        onChange={(e) => setNewSectionName(prev => ({ ...prev, [query._id]: e.target.value }))}
+                        onChange={(e) =>
+                          setNewSectionName((prev) => ({
+                            ...prev,
+                            [query._id]: e.target.value,
+                          }))
+                        }
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -440,10 +586,17 @@ const AdminDashboard = () => {
                         disabled={createSectionMutation.isPending}
                         className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-colors"
                       >
-                        {createSectionMutation.isPending ? "Creating..." : "Add"}
+                        {createSectionMutation.isPending
+                          ? "Creating..."
+                          : "Add"}
                       </button>
                       <button
-                        onClick={() => setShowNewSectionInput(prev => ({ ...prev, [query._id]: false }))}
+                        onClick={() =>
+                          setShowNewSectionInput((prev) => ({
+                            ...prev,
+                            [query._id]: false,
+                          }))
+                        }
                         className="px-3 py-3 border border-stone-300 text-stone-500 hover:text-red-500 hover:border-red-300 rounded-xl text-sm font-bold transition-colors"
                       >
                         <XCircle className="w-4 h-4" />
@@ -454,25 +607,49 @@ const AdminDashboard = () => {
 
                 <div className="flex gap-3 justify-end items-center">
                   {!currentAnswer?.trim() && (
-                    <p className="text-xs text-stone-400 mr-auto">Select or write an answer to publish</p>
+                    <p className="text-xs text-stone-400 mr-auto">
+                      Select or write an answer to publish
+                    </p>
                   )}
                   <button
-                    onClick={() => publishQueryMutation.mutate({
-                      id: query._id,
-                      data: {
-                        answer: currentAnswer,
-                        responseId: sel?.id ?? undefined,
-                        sectionId: selectedSection[query._id] || null,
-                      }
-                    })}
-                    disabled={publishQueryMutation.isPending || !currentAnswer?.trim()}
+                    onClick={() =>
+                      publishQueryMutation.mutate({
+                        id: query._id,
+                        data: {
+                          answer: currentAnswer,
+                          responseId: sel?.id ?? undefined,
+                          sectionId: selectedSection[query._id] || undefined,
+                        },
+                      })
+                    }
+                    disabled={
+                      publishQueryMutation.isPending ||
+                      !currentAnswer?.trim() ||
+                      !selectedSection[query._id]
+                    }
                     className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
                   >
                     {publishQueryMutation.isPending ? (
                       <>
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
                         </svg>
                         PUBLISHING...
                       </>
@@ -492,7 +669,9 @@ const AdminDashboard = () => {
 
       {/* Pending FAQs section */}
       <div className="mb-6 border-b border-stone-100 pb-3 mt-12">
-        <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">Pending Approvals (AI Generated)</h2>
+        <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
+          Pending Approvals (AI Generated)
+        </h2>
       </div>
 
       {faqsLoading ? (
@@ -500,38 +679,87 @@ const AdminDashboard = () => {
       ) : pendingFAQs?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 border border-dashed border-stone-200 rounded-3xl bg-white shadow-sm">
           <CheckSquare className="w-12 h-12 text-stone-300 mb-4" />
-          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">All caught up!</p>
-          <p className="text-stone-400 text-sm mt-1">No pending FAQs to review.</p>
+          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">
+            All caught up!
+          </p>
+          <p className="text-stone-400 text-sm mt-1">
+            No pending FAQs to review.
+          </p>
         </div>
       ) : (
         <div className="grid gap-6">
           {pendingFAQs?.map((faq) => (
-            <div key={faq._id} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+            <div
+              key={faq._id}
+              className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]"
+            >
               <div className="flex gap-2 mb-4">
-                {faq.tags?.map((tag) => (
-                  <span key={tag} className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                    {tag}
+                {(faq.section?.title || faq.tags?.[0]) && (
+                  <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                    {faq.section?.title || faq.tags?.[0]}
                   </span>
-                ))}
+                )}
               </div>
-              
-              <h3 className="text-xl font-bold text-stone-900 mb-3 font-display tracking-tight leading-snug">{faq.title}</h3>
+
+              <h3 className="text-xl font-bold text-stone-900 mb-3 font-display tracking-tight leading-snug">
+                {faq.title}
+              </h3>
               <div className="bg-stone-50 p-5 rounded-xl border border-stone-200 mb-6 shadow-inner">
-                <p className="text-stone-700 text-sm leading-relaxed">{faq.answer}</p>
+                <p className="text-stone-700 text-sm leading-relaxed">
+                  {faq.answer}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                  <Folder className="h-4 w-4 text-stone-400" />
+                  Section
+                  <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">
+                    (required for publishing)
+                  </span>
+                </h4>
+                <select
+                  className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                  value={selectedPendingSection[faq._id] || ""}
+                  onChange={(e) =>
+                    setSelectedPendingSection((prev) => ({
+                      ...prev,
+                      [faq._id]: e.target.value || "",
+                    }))
+                  }
+                >
+                  <option value="">— Select a section —</option>
+                  {sections?.map((section) => (
+                    <option key={section._id} value={section._id}>
+                      {section.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex gap-3 justify-end">
-                <button 
+                <button
                   onClick={() => rejectMutation.mutate(faq._id)}
-                  disabled={rejectMutation.isPending || approveMutation.isPending}
+                  disabled={
+                    rejectMutation.isPending || approveMutation.isPending
+                  }
                   className="px-6 py-2 border border-stone-200 hover:bg-red-50 hover:border-red-200 text-stone-600 hover:text-red-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   <XCircle className="w-4 h-4" />
                   REJECT
                 </button>
-                <button 
-                  onClick={() => approveMutation.mutate(faq._id)}
-                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                <button
+                  onClick={() =>
+                    approveMutation.mutate({
+                      id: faq._id,
+                      data: { sectionId: selectedPendingSection[faq._id] },
+                    })
+                  }
+                  disabled={
+                    approveMutation.isPending ||
+                    rejectMutation.isPending ||
+                    !selectedPendingSection[faq._id]
+                  }
                   className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
