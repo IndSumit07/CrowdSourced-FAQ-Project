@@ -83,34 +83,23 @@ export class QueryService {
       }
     }
 
-    // Step 2: AI relevance validation
-    const validation =
-      await this.#aiValidationService.validateRelevance(question);
-    if (!validation.relevant) {
-      throw new BadRequestError(
-        `This question is outside our supported domains. ${validation.reason}`,
-      );
-    }
-
-    // Step 3: Generate embedding for the query
+    // Step 2: Generate embedding for the query
     const embedding =
       resolution.embedding || (await this.#embeddingService.embed(question));
 
-    // Step 4: Calculate deadline
+    // Step 3: Calculate deadline
     // Use ms arithmetic — setHours() truncates decimals (e.g. 0.1h → 0h)
     const deadlineMs = env.QUERY_DEADLINE_HOURS * 60 * 60 * 1000;
     const deadline = new Date(Date.now() + deadlineMs);
 
-    // Step 5: Persist the query
+    // Step 4: Persist the query
     const query = await queryRepo.create({
       question,
-      category: validation.category,
+      category: "general",
       status: "open",
       deadline,
       embedding,
       creator: creatorId,
-      aiValidated: true,
-      aiRelevanceScore: validation.confidence,
     });
 
     // Step 6: Schedule deadline processing job
