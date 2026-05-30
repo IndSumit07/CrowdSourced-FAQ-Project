@@ -278,4 +278,8 @@ export class AdminService {
       },
     };
   }
+
+  async createDirectFAQ(data, adminId) {
+    return faqService.createDirectFAQ(data, adminId);
+  }
 }

@@ -156,4 +156,39 @@ export class FAQService {
   async getStats() {
     return this.#faqRepo.getStats();
   }
+
+  /**
+   * Admin directly creates and publishes a FAQ (bypasses approval workflow).
+   * Generates embedding automatically.
+   */
+  async createDirectFAQ(data, adminId) {
+    const embedding = await this.#embeddingService.embed(data.title);
+    const { sectionId, ...rest } = data;
+    const faqData = {
+      ...rest,
+      embedding,
+      published: true,
+      publishedAt: new Date(),
+      createdBy: adminId,
+      approvedBy: adminId,
+      aiGenerated: false,
+      editedByAdmin: true,
+      section: sectionId,
+    };
+    const faq = await this.#faqRepo.create(faqData);
+    await cacheDelPattern("faqs:list:*");
+    try {
+      const io = getIO();
+      io.emit(SOCKET_EVENTS.FAQ_PUBLISHED, {
+        faqId: faq._id,
+        title: faq.title,
+        category: faq.category,
+        publishedAt: faq.publishedAt,
+      });
+    } catch (socketErr) {
+      logger.warn({ msg: "Could not emit FAQ publish event", err: socketErr.message });
+    }
+    logger.info({ msg: "Direct FAQ created by admin", faqId: faq._id, adminId });
+    return faq;
+  }
 }

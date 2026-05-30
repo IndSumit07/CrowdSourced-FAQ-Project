@@ -69,6 +69,17 @@ const approveFaqSchema = z.object({
   sectionId: sectionIdSchema,
 });
 
+const createDirectFaqSchema = z.object({
+  title: z.string().min(10).max(300),
+  answer: z.string().min(20).max(10000),
+  category: z
+    .enum(["internship", "placement", "resume", "dsa", "coding-interview", "career", "general"])
+    .optional()
+    .default("general"),
+  sectionId: sectionIdSchema,
+  tags: z.array(z.string()).optional().default([]),
+});
+
 // Dashboard
 router.get("/stats", adminController.getDashboardStats);
 router.get("/top-contributors", adminController.getTopContributors);
@@ -83,6 +94,11 @@ router.post(
 );
 
 // FAQ management
+router.post(
+  "/faqs",
+  validateBody(createDirectFaqSchema),
+  adminController.createDirectFAQ,
+);
 router.get("/faqs/pending", adminController.getPendingFAQs);
 router.post(
   "/faqs/:id/approve",

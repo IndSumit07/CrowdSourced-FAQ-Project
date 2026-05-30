@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Modal } from "../../components/ui/Modal";
 import { adminService, sectionService } from "../../services/api";
 import {
   StatsGridSkeleton,
@@ -19,10 +20,23 @@ import {
   Bot,
   Plus,
   Folder,
+  FileText,
+  X,
 } from "lucide-react";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
+
+  const [showAddFaq, setShowAddFaq] = useState(false);
+  const [addFaqForm, setAddFaqForm] = useState({
+    title: "",
+    answer: "",
+    category: "general",
+    sectionId: "",
+    tags: "",
+  });
+  const [faqNewSectionName, setFaqNewSectionName] = useState("");
+  const [showFaqNewSectionInput, setShowFaqNewSectionInput] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["admin-stats"],
@@ -73,11 +87,11 @@ const AdminDashboard = () => {
     },
   });
 
-  const createSectionMutation = useMutation({
+const createSectionMutation = useMutation({
     mutationFn: (title) => sectionService.create({ title }),
     onSuccess: (res) => {
       const section = res.data.data.section;
-      queryClient.invalidateQueries({ queryKey: ["sections"] });
+      queryClient.invalidateQueries(["sections"]);
       toast.success(`Section "${section.title}" created`);
     },
     onError: (err) =>
@@ -158,25 +172,75 @@ const AdminDashboard = () => {
       toast.error(err.response?.data?.message || "Failed to approve FAQ"),
   });
 
-  const rejectMutation = useMutation({
+const rejectMutation = useMutation({
     mutationFn: (id) => adminService.rejectFAQ(id, "Admin rejected draft"),
     onSuccess: () => {
-      toast.success("FAQ Draft rejected.");
+      toast.success("FAQ Draft rejectd.");
       queryClient.invalidateQueries(["pending-faqs"]);
     },
     onError: (err) =>
       toast.error(err.response?.data?.message || "Failed to reject FAQ"),
   });
 
+  const createDirectFaqMutation = useMutation({
+    mutationFn: (data) => adminService.createDirectFAQ(data),
+    onSuccess: () => {
+      toast.success("FAQ created and published successfully!");
+      queryClient.invalidateQueries(["admin-stats"]);
+      queryClient.invalidateQueries(["faqs"]);
+      setShowAddFaq(false);
+      setAddFaqForm({ title: "", answer: "", category: "general", sectionId: "", tags: "" });
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to create FAQ"),
+  });
+
+  const createFaqSectionMutation = useMutation({
+    mutationFn: (title) => sectionService.create({ title }),
+    onSuccess: (res) => {
+      const section = res.data.data.section;
+      queryClient.invalidateQueries(["sections"]);
+      setAddFaqForm((p) => ({ ...p, sectionId: section._id }));
+      setFaqNewSectionName("");
+      setShowFaqNewSectionInput(false);
+      toast.success(`Section "${section.title}" created`);
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to create section"),
+  });
+
+  const handleAddFaqSubmit = (e) => {
+    e.preventDefault();
+    const tags = addFaqForm.tags
+      ? addFaqForm.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
+    createDirectFaqMutation.mutate({
+      title: addFaqForm.title,
+      answer: addFaqForm.answer,
+      category: addFaqForm.category,
+      sectionId: addFaqForm.sectionId,
+      tags,
+    });
+  };
+
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-900 font-display mb-2 tracking-tight">
-          Admin Dashboard
-        </h1>
-        <p className="text-stone-500 text-sm">
-          Platform overview and content moderation
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-stone-900 font-display mb-2 tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p className="text-stone-500 text-sm">
+            Platform overview and content moderation
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddFaq(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Add FAQ
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -662,7 +726,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Pending FAQs section */}
-      <div className="mb-6 border-b border-stone-100 pb-3 mt-12">
+      <div className="mb-6 border-b border-stone-100 pb-3 mt-12 flex items-center justify-between">
         <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
           Pending Approvals (AI Generated)
         </h2>
@@ -764,6 +828,233 @@ const AdminDashboard = () => {
           ))}
         </div>
       )}
+
+      {/* Add FAQ Modal */}
+      <Modal
+        isOpen={showAddFaq}
+        onClose={() => setShowAddFaq(false)}
+        title="Add New FAQ"
+        size="lg"
+      >
+        <form onSubmit={handleAddFaqSubmit} className="space-y-6">
+          <p className="text-sm text-stone-400 -mt-2">
+            Fill in the details below to create and publish a new FAQ entry directly to the knowledge base.
+          </p>
+
+          <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20 space-y-4">
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
+                Question / Title <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  minLength={10}
+                  maxLength={300}
+                  placeholder="Type the FAQ question here..."
+                  className="w-full bg-white/90 border border-white/30 rounded-xl px-4 py-3 pl-10 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm"
+                  value={addFaqForm.title}
+                  onChange={(e) => setAddFaqForm((p) => ({ ...p, title: e.target.value }))}
+                />
+                <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black ${addFaqForm.title.length >= 10 ? "text-teal-500" : "text-stone-400"}`}>
+                  Q
+                </span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-stone-500">Min 10 characters</span>
+                <span className={`text-[10px] font-mono ${addFaqForm.title.length > 250 ? "text-amber-500" : "text-stone-400"}`}>
+                  {addFaqForm.title.length}/300
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
+                Answer <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <textarea
+                  required
+                  minLength={20}
+                  rows={5}
+                  placeholder="Write a clear, detailed answer..."
+                  className="w-full bg-white/90 border border-white/30 rounded-xl px-4 py-3 pl-10 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm resize-none"
+                  value={addFaqForm.answer}
+                  onChange={(e) => setAddFaqForm((p) => ({ ...p, answer: e.target.value }))}
+                />
+                <span className={`absolute left-3 top-3.5 text-xs font-black ${addFaqForm.answer.length >= 20 ? "text-teal-500" : "text-stone-400"}`}>
+                  A
+                </span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-stone-500">Min 20 characters</span>
+                <span className={`text-[10px] font-mono ${addFaqForm.answer.length > 250 ? "text-amber-500" : "text-stone-400"}`}>
+                  {addFaqForm.answer.length}/10000
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
+                  Category
+                </label>
+                <select
+                  className="w-full bg-white/90 border border-white/30 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm cursor-pointer appearance-none"
+                  value={addFaqForm.category}
+                  onChange={(e) => setAddFaqForm((p) => ({ ...p, category: e.target.value }))}
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
+                >
+                  <option value="general">General</option>
+                  <option value="internship">Internship</option>
+                  <option value="placement">Placement</option>
+                  <option value="resume">Resume</option>
+                  <option value="dsa">DSA</option>
+                  <option value="coding-interview">Coding Interview</option>
+                  <option value="career">Career</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-teal-400 mb-2">
+                  Section <span className="text-red-400">*</span>
+                </label>
+                {!showFaqNewSectionInput ? (
+                  <div className="flex gap-2">
+                    <select
+                      required
+                      className="flex-1 bg-white/90 border border-white/30 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm cursor-pointer appearance-none"
+                      value={addFaqForm.sectionId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "__new__") {
+                          setShowFaqNewSectionInput(true);
+                        } else {
+                          setAddFaqForm((p) => ({ ...p, sectionId: val }));
+                        }
+                      }}
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
+                    >
+                      <option value="">— Select section —</option>
+                      {sections?.map((s) => (
+                        <option key={s._id} value={s._id}>{s.title}</option>
+                      ))}
+                      <option value="__new__">+ Create new section</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowFaqNewSectionInput(true)}
+                      className="px-3 py-2.5 bg-white/60 hover:bg-white/80 border border-white/30 rounded-xl text-xs font-bold text-teal-600 transition-all"
+                      title="Create new section"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter section name..."
+                      autoFocus
+                      className="flex-1 bg-white/90 border border-teal-400/50 rounded-xl px-4 py-3 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm"
+                      value={faqNewSectionName}
+                      onChange={(e) => setFaqNewSectionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (faqNewSectionName.trim()) createFaqSectionMutation.mutate(faqNewSectionName.trim());
+                        }
+                        if (e.key === "Escape") {
+                          setShowFaqNewSectionInput(false);
+                          setFaqNewSectionName("");
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+onClick={() => {
+                          if (faqNewSectionName.trim()) createFaqSectionMutation.mutate(faqNewSectionName.trim());
+                        }}
+                        disabled={!faqNewSectionName.trim() || createFaqSectionMutation.isPending}
+                      className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-1"
+                    >
+                      {createFaqSectionMutation.isPending ? (
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+onClick={() => {
+                          setShowFaqNewSectionInput(false);
+                          setFaqNewSectionName("");
+                        }}
+                      className="px-3 py-2.5 border border-white/30 hover:bg-white/20 text-stone-400 hover:text-white rounded-xl text-xs font-bold transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">
+              Tags <span className="text-stone-500 normal-case font-medium tracking-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. interview, coding, python — comma separated"
+              className="w-full bg-white/70 border border-white/30 rounded-xl px-4 py-3 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all shadow-sm"
+              value={addFaqForm.tags}
+              onChange={(e) => setAddFaqForm((p) => ({ ...p, tags: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setShowAddFaq(false)}
+              className="px-5 py-2.5 border border-white/30 hover:bg-white/20 text-stone-300 hover:text-white rounded-xl text-sm font-bold transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={
+                createDirectFaqMutation.isPending ||
+                !addFaqForm.title.trim() ||
+                !addFaqForm.answer.trim() ||
+                !addFaqForm.sectionId
+              }
+              className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-teal-500/25 disabled:opacity-50 disabled:shadow-none flex items-center gap-2"
+            >
+              {createDirectFaqMutation.isPending ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4" />
+                  Create & Publish
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

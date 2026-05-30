@@ -9,7 +9,9 @@ export class FAQRepository {
     return FAQ.findOne({
       title: { $regex: new RegExp(`^${title.trim()}$`, "i") },
       published: true,
-    }).lean();
+    })
+      .populate("section", "title order")
+      .lean();
   }
 
   /**
@@ -28,6 +30,7 @@ export class FAQRepository {
         .sort({ score: { $meta: "textScore" } })
         .skip(skip)
         .limit(limit)
+        .populate("section", "title order")
         .lean(),
       FAQ.countDocuments(filter),
     ]);
@@ -86,7 +89,12 @@ export class FAQRepository {
 
   async findAll({ page, limit, skip, sort, filter = {} }) {
     const [faqs, total] = await Promise.all([
-      FAQ.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      FAQ.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .populate("section", "title order")
+        .lean(),
       FAQ.countDocuments(filter),
     ]);
     return { faqs, total };

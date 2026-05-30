@@ -1,20 +1,43 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { faqService, sectionService } from "../services/api";
+import { faqService } from "../services/api";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Skeleton } from "../components/ui/Skeleton";
+import { BookOpen, ChevronDown, X } from "lucide-react";
 
 const FAQPage = () => {
   const [search, setSearch] = useState("");
   const [openIds, setOpenIds] = useState(() => new Set());
+  const [activeSection, setActiveSection] = useState(null);
+  const [selectedSection, setSelectedSection] = useState(null);
+  const sectionRefs = useRef({});
 
-  const { data: sections } = useQuery({
-    queryKey: ["sections"],
-    queryFn: async () => {
-      const res = await sectionService.getAll();
-      return res.data.data.sections || [];
-    },
-  });
+  useEffect(() => {
+    if (!selectedSection) return;
+    const el = document.getElementById(`section-${selectedSection}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedSection]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 120;
+      let found = null;
+      for (const [sectionTitle, ref] of Object.entries(sectionRefs.current)) {
+        if (ref) {
+          const top = Number(ref.dataset.offsetTop);
+          const bottom = Number(ref.dataset.offsetBottom);
+          if (scrollPos >= top && scrollPos < bottom) {
+            found = sectionTitle;
+            break;
+          }
+        }
+      }
+      setActiveSection((prev) => (prev !== found ? found : prev));
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const fetchAllPages = async (fetchPage) => {
     const firstRes = await fetchPage(1);
@@ -50,7 +73,6 @@ const FAQPage = () => {
   const faqs = data?.docs || data || [];
 
   const groupedFaqs = useMemo(() => {
-    const sectionMap = new Map((sections || []).map((s) => [String(s._id), s.title]));
     const getTagValue = (tags, prefix) =>
       tags?.find((tag) => tag.startsWith(prefix))?.replace(prefix, "");
 
@@ -78,8 +100,9 @@ const FAQPage = () => {
       let sectionTitle = null;
       let sectionOrder = 999;
 
-      if (faq.section) {
-        sectionTitle = sectionMap.get(String(faq.section)) || null;
+      if (faq.section && typeof faq.section === "object") {
+        sectionTitle = faq.section.title || null;
+        sectionOrder = faq.section.order || 999;
       }
 
       if (!sectionTitle) {
@@ -109,7 +132,11 @@ const FAQPage = () => {
           return a.title.localeCompare(b.title);
         }),
       }));
-  }, [faqs, sections]);
+  }, [faqs]);
+
+  const displayedGroups = selectedSection
+    ? groupedFaqs.filter((g) => g.sectionTitle === selectedSection)
+    : groupedFaqs;
 
   const toggleOpen = (id) => {
     setOpenIds((prev) => {
@@ -128,10 +155,8 @@ const FAQPage = () => {
     setOpenIds(new Set());
   };
 
-  const handleContentsClick = (id) => {
-    setOpenIds((prev) => new Set(prev).add(id));
-    const target = document.getElementById(`faq-${id}`);
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handleSectionClick = (sectionTitle) => {
+    setSelectedSection(sectionTitle === selectedSection ? null : sectionTitle);
   };
 
   return (
@@ -169,6 +194,63 @@ const FAQPage = () => {
         </button>
       </div>
 
+      {/* Table of Contents - Only show when not searching */}
+      {!search && groupedFaqs.length > 0 && (
+        <div className="sticky top-16 z-20 mb-8 bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-stone-100 bg-stone-50">
+            <BookOpen className="w-4 h-4 text-stone-500" />
+            <span className="text-xs font-extrabold uppercase tracking-wider text-stone-600">
+              Table of Contents
+            </span>
+            {selectedSection && (
+              <button
+                type="button"
+                onClick={() => setSelectedSection(null)}
+                className="ml-auto flex items-center gap-1 text-xs font-bold text-teal-600 hover:text-teal-800"
+              >
+                <X className="w-3 h-3" />
+                Show All
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 px-5 py-4">
+            {groupedFaqs.map((group) => {
+              const isActive = activeSection === group.sectionTitle;
+              const isSelected = selectedSection === group.sectionTitle;
+              return (
+                <button
+                  key={group.sectionTitle}
+                  type="button"
+                  onClick={() => handleSectionClick(group.sectionTitle)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    isSelected
+                      ? "bg-teal-600 text-white shadow-sm"
+                      : isActive
+                        ? "bg-teal-100 text-teal-800 border border-teal-200"
+                        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                  }`}
+                >
+                  <span>{group.sectionTitle}</span>
+                  <span
+                    className={`text-[10px] font-extrabold ${isSelected ? "text-teal-200" : "text-stone-400"}`}
+                  >
+                    {group.items.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {selectedSection && (
+            <div className="px-5 py-2 bg-teal-50 border-t border-teal-100 flex items-center gap-2">
+              <ChevronDown className="w-3 h-3 text-teal-600" />
+              <span className="text-xs font-bold text-teal-800">
+                Showing: {selectedSection}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-24 w-full rounded-2xl" />
@@ -185,8 +267,20 @@ const FAQPage = () => {
         </div>
       ) : (
         <div className="space-y-8">
-          {groupedFaqs.map((group) => (
-            <section key={group.sectionTitle} className="space-y-4">
+          {displayedGroups.map((group) => (
+            <section
+              key={group.sectionTitle}
+              id={`section-${group.sectionTitle}`}
+              ref={(el) => {
+                if (el) {
+                  sectionRefs.current[group.sectionTitle] = el;
+                  const rect = el.getBoundingClientRect();
+                  el.dataset.offsetTop = rect.top + window.scrollY;
+                  el.dataset.offsetBottom = rect.top + window.scrollY + rect.height;
+                }
+              }}
+              className="space-y-4"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-sm font-black text-stone-900">
                   {group.sectionTitle}

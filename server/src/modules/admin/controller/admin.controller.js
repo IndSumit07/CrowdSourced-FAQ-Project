@@ -79,4 +79,9 @@ export class AdminController {
     const stats = await adminService.getDashboardStats();
     return ApiResponse.success(res, { stats });
   });
+
+  createDirectFAQ = asyncHandler(async (req, res) => {
+    const faq = await adminService.createDirectFAQ(req.body, req.user.id);
+    return ApiResponse.created(res, { faq }, "FAQ created and published");
+  });
 }

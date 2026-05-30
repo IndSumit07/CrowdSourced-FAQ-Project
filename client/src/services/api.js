@@ -45,6 +45,7 @@ export const adminService = {
     api.get("/admin/queries/pending-review", { params }),
   publishQueryToFAQ: (id, data) =>
     api.post(`/admin/queries/${id}/publish-faq`, data),
+  createDirectFAQ: (data) => api.post("/admin/faqs", data),
   getPendingFAQs: (params) => api.get("/admin/faqs/pending", { params }),
   approveFAQ: (id, data) => api.post(`/admin/faqs/${id}/approve`, data),
   editAndApproveFAQ: (id, data) =>
