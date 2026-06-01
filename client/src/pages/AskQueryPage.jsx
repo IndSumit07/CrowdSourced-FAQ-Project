@@ -39,7 +39,7 @@ const AIAnswerCard = ({ answer }) => {
           AI Answer
         </span>
         <span className="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-violet-100 text-violet-600 rounded-full">
-          Powered by OpenRouter
+          Powered by Groq
         </span>
       </div>
       <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
@@ -164,7 +164,7 @@ const AskQueryPage = () => {
       const res = await queryService.askQuery(q.trim());
       setRagResult(res.data.data); // { aiAnswer, relatedFAQs }
     } catch {
-      // OpenRouter or server failure — gracefully fall back to FAQ search only
+      // Groq or server failure — gracefully fall back to FAQ search only
       try {
         const res = await faqService.resolve(q.trim());
         const resolution = res.data.data;

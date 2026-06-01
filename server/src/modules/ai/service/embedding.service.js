@@ -15,7 +15,7 @@ export class EmbeddingService {
   constructor() {
     this.#provider = getAIProvider();
     const mainProviderName = aiConfig.provider;
-    const needsEmbeddingFallback = mainProviderName === "openrouter" || mainProviderName === "bedrock";
+    const needsEmbeddingFallback = mainProviderName === "groq" || mainProviderName === "bedrock";
     const hasJinaKey = Boolean(aiConfig.jina?.apiKey);
     if (needsEmbeddingFallback && hasJinaKey) {
       this.#embeddingProvider = new JinaProvider();

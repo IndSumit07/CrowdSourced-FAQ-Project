@@ -29,14 +29,14 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
 
   AI_PROVIDER: z
-    .enum(["gemini", "openai", "bedrock", "jina", "openrouter"])
+    .enum(["gemini", "openai", "bedrock", "jina", "groq"])
     .default("gemini"),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_EMBEDDING_MODEL: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
-  OPENROUTER_API_KEY: z.string().optional(),
-  OPENROUTER_BASE_URL: z.string().optional(),
-  OPENROUTER_CHAT_MODEL: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_BASE_URL: z.string().optional(),
+  GROQ_CHAT_MODEL: z.string().optional(),
   BEDROCK_REGION: z.string().optional(),
   BEDROCK_EMBEDDING_MODEL: z.string().optional(),
   AWS_REGION: z.string().optional(),

@@ -24,18 +24,18 @@ CONTENT RULES:
 
 /**
  * RAG (Retrieval-Augmented Generation) Service
- * Generates AI answers grounded in retrieved FAQ context using OpenRouter.
+ * Generates AI answers grounded in retrieved FAQ context using Groq.
  */
 export class RAGService {
   #client;
 
   constructor() {
-    if (!aiConfig.openrouter.apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for RAG service");
+    if (!aiConfig.groq.apiKey) {
+      throw new Error("GROQ_API_KEY is required for RAG service");
     }
     this.#client = new OpenAI({
-      apiKey: aiConfig.openrouter.apiKey,
-      baseURL: aiConfig.openrouter.baseUrl || "https://openrouter.ai/api/v1",
+      apiKey: aiConfig.groq.apiKey,
+      baseURL: aiConfig.groq.baseUrl || "https://api.groq.com/openai/v1",
     });
   }
 
@@ -66,7 +66,7 @@ ${contextBlock}
 Please provide a helpful answer based on the above context.`;
 
       const response = await this.#client.chat.completions.create({
-        model: aiConfig.openrouter.chatModel,
+        model: aiConfig.groq.chatModel,
         temperature: 0.3,
         max_tokens: 600,
         messages: [
