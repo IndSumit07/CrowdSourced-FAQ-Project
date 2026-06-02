@@ -33,6 +33,9 @@
   .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
 
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
   .glass {
     @apply bg-white/80 backdrop-blur-xl border border-white/20;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);

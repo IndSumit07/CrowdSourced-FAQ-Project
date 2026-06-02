@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { faqService } from "../services/api";
-import { SearchBar } from "../components/ui/SearchBar";
+import { faqService, sectionService } from "../services/api"; // Import sectionService
+import { SearchBar, Select } from "../components/ui/SearchBar"; // Import Select
 import { Skeleton } from "../components/ui/Skeleton";
 import { BookOpen, ChevronDown, X } from "lucide-react";
 
@@ -213,7 +213,7 @@ const FAQPage = () => {
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2 px-5 py-4">
+          <div className="flex overflow-x-auto md:flex-wrap gap-2 px-5 py-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {groupedFaqs.map((group) => {
               const isActive = activeSection === group.sectionTitle;
               const isSelected = selectedSection === group.sectionTitle;
@@ -222,7 +222,7 @@ const FAQPage = () => {
                   key={group.sectionTitle}
                   type="button"
                   onClick={() => handleSectionClick(group.sectionTitle)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center shrink-0 whitespace-nowrap gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     isSelected
                       ? "bg-teal-600 text-white shadow-sm"
                       : isActive
