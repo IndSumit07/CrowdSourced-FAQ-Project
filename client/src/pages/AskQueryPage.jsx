@@ -340,7 +340,7 @@ const AskQueryPage = () => {
           <button
             type="submit"
             disabled={submitMutation.isPending || isAsking}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl font-extrabold tracking-wider transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+            className="inline-flex justify-center items-center gap-2 w-full sm:w-auto px-6 py-3 bg-stone-900 hover:bg-[#B45309] text-white rounded-xl font-extrabold tracking-wider transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
             {submitMutation.isPending ? "SUBMITTING…" : "SUBMIT TO CONTRIBUTORS"}
