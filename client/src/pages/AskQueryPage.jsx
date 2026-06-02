@@ -236,7 +236,7 @@ const AskQueryPage = () => {
           <label className="block text-sm font-bold text-stone-700 mb-2">
             Your Question
           </label>
-          <div className="relative flex gap-2">
+          <div className="relative flex flex-col sm:flex-row gap-2">
             <textarea
               {...register("question")}
               rows={4}
@@ -256,7 +256,7 @@ const AskQueryPage = () => {
                 }
               }}
               disabled={isAsking || !questionValue?.trim() || questionValue.trim().length < 10}
-              className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-extrabold tracking-wider transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap h-fit self-start"
+              className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-extrabold tracking-wider transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap h-fit w-full sm:w-auto self-start flex justify-center"
             >
               {isAsking ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
