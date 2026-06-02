@@ -33,7 +33,7 @@ export class ContributorService {
       }
     }
 
-    await queryRepo.updateStatus(queryId, "rejected");
+    await queryRepo.updateStatus(queryId, "flagged");
 
     const creatorId = (query.creator?._id || query.creator)?.toString();
 
@@ -52,7 +52,7 @@ export class ContributorService {
 
     io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_REMOVED, { queryId });
 
-    logger.info({ msg: "Query removed due to flagging", queryId, flagCount });
+    logger.info({ msg: "Query flagged and removed from feed", queryId, flagCount });
   }
 
   async acceptQuery(queryId, contributorId) {

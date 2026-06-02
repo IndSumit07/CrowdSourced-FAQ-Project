@@ -26,7 +26,6 @@ export const queryService = {
   getMyQueries: (params) => api.get("/queries/my", { params }),
   getResponses: (id) => api.get(`/queries/${id}/responses`),
   delete: (id) => api.delete(`/queries/${id}`),
-  getStats: () => api.get("/queries/admin/stats"),
 };
 
 export const contributorService = {
@@ -43,6 +42,10 @@ export const adminService = {
   getTopContributors: () => api.get("/admin/top-contributors"),
   getPendingReviewQueries: (params) =>
     api.get("/admin/queries/pending-review", { params }),
+  getRejectedQueries: (params) =>
+    api.get("/admin/queries/rejected", { params }),
+  restoreQuery: (id) => api.post(`/admin/queries/${id}/restore`),
+  deleteQuery: (id) => api.delete(`/admin/queries/${id}`),
   publishQueryToFAQ: (id, data) =>
     api.post(`/admin/queries/${id}/publish-faq`, data),
   createDirectFAQ: (data) => api.post("/admin/faqs", data),

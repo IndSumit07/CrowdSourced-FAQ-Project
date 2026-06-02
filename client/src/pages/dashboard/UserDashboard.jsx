@@ -3,6 +3,7 @@ import { queryService } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const UserDashboard = () => {
   const queryClient = useQueryClient();
@@ -33,7 +34,7 @@ const UserDashboard = () => {
     },
     onError: (err) => {
       const message = err.response?.data?.message || "Failed to delete query";
-      window.alert(message);
+      toast.error(message);
     },
   });
 
@@ -136,10 +137,14 @@ const UserDashboard = () => {
                                 ? "bg-blue-100 text-blue-800"
                                 : q.status === "expired"
                                   ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                  : q.status === "flagged"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : q.status === "admin-deleted"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
-                          {q.status}
+                          {q.status === "flagged" ? "Flagged" : q.status === "admin-deleted" ? "Deleted by Admin" : q.status}
                         </span>
                         <span className="text-[11px] text-stone-400 font-bold">
                           {new Date(q.createdAt).toLocaleDateString()}

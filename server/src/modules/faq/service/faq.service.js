@@ -163,9 +163,16 @@ export class FAQService {
    */
   async createDirectFAQ(data, adminId) {
     const embedding = await this.#embeddingService.embed(data.title);
-    const { sectionId, ...rest } = data;
+    const { sectionId, tags, ...rest } = data;
+    
+    // Normalize tags: if string, split by comma; if array, use as-is
+    const normalizedTags = typeof tags === "string"
+      ? tags.split(",").map((t) => t.trim()).filter(Boolean)
+      : Array.isArray(tags) ? tags : [];
+
     const faqData = {
       ...rest,
+      tags: normalizedTags,
       embedding,
       published: true,
       publishedAt: new Date(),

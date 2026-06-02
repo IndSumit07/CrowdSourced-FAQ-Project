@@ -21,7 +21,7 @@ export class QueryRepository {
   }
 
   async updateStatus(id, status) {
-    return Query.findByIdAndUpdate(id, { status }, { new: true }).lean();
+    return Query.findByIdAndUpdate(id, { status }, { new: true, runValidators: false }).lean();
   }
 
   async findOpenQueries({ page = 1, limit = 20, skip = 0, category } = {}) {

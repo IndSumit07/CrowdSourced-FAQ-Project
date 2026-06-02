@@ -70,10 +70,10 @@ const approveFaqSchema = z.object({
 });
 
 const createDirectFaqSchema = z.object({
-  title: z.string().min(10).max(300),
-  answer: z.string().min(20).max(10000),
-  sectionId: sectionIdSchema,
-  tags: z.array(z.string()).optional().default([]),
+  title: z.string().min(10, "Title must be at least 10 characters").max(300),
+  answer: z.string().min(20, "Answer must be at least 20 characters").max(10000),
+  sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid section ID"),
+  tags: z.union([z.string(), z.array(z.string())]).optional().default([]),
 });
 
 // Dashboard
@@ -82,6 +82,9 @@ router.get("/top-contributors", adminController.getTopContributors);
 
 // Query Management
 router.get("/queries/pending-review", adminController.getPendingReviewQueries);
+router.get("/queries/rejected", adminController.getRejectedQueries);
+router.post("/queries/:id/restore", validateParams(objectIdSchema), adminController.restoreQuery);
+router.delete("/queries/:id", validateParams(objectIdSchema), adminController.deleteQuery);
 router.post(
   "/queries/:id/publish-faq",
   validateParams(objectIdSchema),

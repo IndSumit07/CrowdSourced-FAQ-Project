@@ -17,7 +17,7 @@ const querySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "open", "in-progress", "processing", "completed", "rejected", "expired", "admin-review"],
+      enum: ["pending", "open", "in-progress", "processing", "completed", "rejected", "expired", "admin-review", "flagged", "admin-deleted"],
       default: "pending",
     },
     deadline: {

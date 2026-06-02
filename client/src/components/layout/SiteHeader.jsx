@@ -13,7 +13,7 @@ const SiteHeader = () => {
           className="flex items-center gap-3 cursor-pointer select-none"
           title="QueryCare Home"
         >
-          <div className="w-9 h-9 rounded-full bg-linear-to-br from-[#0D9488] to-[#0F766E] flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0D9488] to-[#0F766E] flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105">
             <svg
               className="w-5 h-5 text-white"
               viewBox="0 0 24 24"

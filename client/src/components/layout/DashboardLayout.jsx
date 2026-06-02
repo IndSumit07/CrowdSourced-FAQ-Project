@@ -98,7 +98,7 @@ const DashboardLayout = () => {
                 <Menu className="h-4 w-4" />
               )}
             </button>
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-sm">
               <svg
                 className="w-4.5 h-4.5 text-white"
                 viewBox="0 0 24 24"
@@ -139,7 +139,7 @@ const DashboardLayout = () => {
             {user ? (
               <>
                 <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-full bg-slate-100">
-                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
                     <span className="text-xs font-bold text-white">
                       {user.name?.charAt(0).toUpperCase()}
                     </span>
@@ -185,7 +185,7 @@ const DashboardLayout = () => {
           {user && (
             <div className="mb-5 pb-5 border-b border-slate-100">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-sm">
                   <span className="text-sm font-bold text-white">
                     {user.name?.charAt(0).toUpperCase()}
                   </span>

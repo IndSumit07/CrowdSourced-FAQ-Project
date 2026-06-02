@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "../../components/ui/Modal";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { adminService, sectionService } from "../../services/api";
 import {
   StatsGridSkeleton,
   PendingQueriesSkeleton,
   PendingFAQsSkeleton,
+  RejectedQueriesSkeleton,
 } from "../../components/skeleton-loaders";
 import toast from "react-hot-toast";
 import {
@@ -22,12 +24,16 @@ import {
   Folder,
   FileText,
   X,
+  Flag,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
   const [showAddFaq, setShowAddFaq] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
   const [addFaqForm, setAddFaqForm] = useState({
     title: "",
     answer: "",
@@ -60,6 +66,15 @@ const AdminDashboard = () => {
     queryKey: ["pending-review-queries"],
     queryFn: async () => {
       const res = await adminService.getPendingReviewQueries();
+      const payload = res.data.data;
+      return Array.isArray(payload) ? payload : (payload.queries ?? []);
+    },
+  });
+
+  const { data: rejectedQueries, isLoading: rejectedLoading } = useQuery({
+    queryKey: ["rejected-queries"],
+    queryFn: async () => {
+      const res = await adminService.getRejectedQueries();
       const payload = res.data.data;
       return Array.isArray(payload) ? payload : (payload.queries ?? []);
     },
@@ -154,6 +169,8 @@ const createSectionMutation = useMutation({
     onSuccess: () => {
       toast.success("Query Published as FAQ successfully!");
       queryClient.invalidateQueries({ queryKey: ["pending-review-queries"] });
+      queryClient.invalidateQueries({ queryKey: ["rejected-queries"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-faqs"] });
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: (err) =>
@@ -174,11 +191,34 @@ const createSectionMutation = useMutation({
 const rejectMutation = useMutation({
     mutationFn: (id) => adminService.rejectFAQ(id, "Admin rejected draft"),
     onSuccess: () => {
-      toast.success("FAQ Draft rejectd.");
+      toast.success("FAQ Draft rejected.");
       queryClient.invalidateQueries(["pending-faqs"]);
     },
     onError: (err) =>
       toast.error(err.response?.data?.message || "Failed to reject FAQ"),
+  });
+
+  const restoreQueryMutation = useMutation({
+    mutationFn: (id) => adminService.restoreQuery(id),
+    onSuccess: () => {
+      toast.success("Query restored to feed!");
+      queryClient.invalidateQueries(["rejected-queries"]);
+      queryClient.invalidateQueries(["admin-stats"]);
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to restore query"),
+  });
+
+  const deleteQueryMutation = useMutation({
+    mutationFn: (id) => adminService.deleteQuery(id),
+    onSuccess: () => {
+      toast.success("Query deleted permanently.");
+      queryClient.invalidateQueries(["pending-review-queries"]);
+      queryClient.invalidateQueries(["rejected-queries"]);
+      queryClient.invalidateQueries(["admin-stats"]);
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to delete query"),
   });
 
   const createDirectFaqMutation = useMutation({
@@ -291,11 +331,22 @@ const rejectMutation = useMutation({
                 {pendingQueries?.length ?? stats?.queries?.adminReview ?? "—"}
               </p>
             </div>
+            <div className="bg-white border border-orange-200 p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-orange-500 text-[11px] font-bold uppercase tracking-widest">
+                  Flagged & Removed
+                </p>
+                <Flag className="w-5 h-5 text-orange-500" />
+              </div>
+              <p className="text-4xl font-display font-bold text-orange-600">
+                {rejectedQueries?.length ?? stats?.queries?.flagged ?? "—"}
+              </p>
+            </div>
           </>
         )}
       </div>
 
-      {/* Pending Review Queries section */}
+      {/* Section 1: Pending Review Queries section */}
       <div className="mb-6 mt-12 border-b border-stone-100 pb-3 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
@@ -386,7 +437,7 @@ const rejectMutation = useMutation({
                         </span>
                       )}
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-linear-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
                           AI
                         </div>
                         <span className="text-xs font-bold text-purple-700">
@@ -451,7 +502,7 @@ const rejectMutation = useMutation({
 
                           {/* Contributor info row */}
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
                               {(ans.contributor?.name || "C").charAt(0)}
                             </div>
                             <span className="text-xs font-bold text-stone-700">
@@ -655,6 +706,21 @@ const rejectMutation = useMutation({
                     </p>
                   )}
                   <button
+                    onClick={() => {
+                      setConfirmDialog({
+                        isOpen: true,
+                        title: "Delete Query",
+                        message: "Are you sure you want to delete this query? This action cannot be undone.",
+                        onConfirm: () => deleteQueryMutation.mutate(query._id),
+                      });
+                    }}
+                    disabled={deleteQueryMutation.isPending || publishQueryMutation.isPending}
+                    className="px-4 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Trash2 className={`w-4 h-4 ${deleteQueryMutation.isPending ? "animate-spin" : ""}`} />
+                    {deleteQueryMutation.isPending ? "Deleting..." : "Delete"}
+                  </button>
+                  <button
                     onClick={() =>
                       publishQueryMutation.mutate({
                         id: query._id,
@@ -667,6 +733,7 @@ const rejectMutation = useMutation({
                     }
                     disabled={
                       publishQueryMutation.isPending ||
+                      deleteQueryMutation.isPending ||
                       !currentAnswer?.trim() ||
                       !selectedSection[query._id]
                     }
@@ -710,10 +777,308 @@ const rejectMutation = useMutation({
         </div>
       )}
 
-      {/* Pending FAQs section */}
+      {/* Section 2: Flagged & Removed Queries */}
+      <div className="mb-6 border-b border-stone-100 pb-3 mt-12 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
+            Flagged & Removed
+          </h2>
+          <p className="text-sm text-stone-500 mt-1">
+            Queries that were flagged and removed from the live feed — restore or publish as FAQ
+          </p>
+        </div>
+      </div>
+
+      {rejectedLoading ? (
+        <RejectedQueriesSkeleton />
+      ) : rejectedQueries?.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-stone-200 rounded-3xl bg-white shadow-sm">
+          <Flag className="w-12 h-12 text-stone-300 mb-4" />
+          <p className="text-stone-600 font-semibold text-lg font-display tracking-tight">
+            No flagged queries.
+          </p>
+          <p className="text-stone-400 text-sm mt-1">
+            Queries flagged by users will appear here.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 mb-12">
+          {rejectedQueries?.map((query) => {
+            const rejectedAnswer = finalAnswer[query._id] || "";
+            const rejectedSection = selectedSection[query._id] || "";
+
+            return (
+              <div
+                key={query._id}
+                className="bg-white border border-orange-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]"
+              >
+                <div className="flex gap-2 mb-4">
+                  <span className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                    {query.category}
+                  </span>
+                  <span className="px-2.5 py-1 bg-orange-50 border border-orange-200 text-orange-700 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <Flag className="w-3 h-3" />
+                    Flagged
+                  </span>
+                  {query.flagCount && (
+                    <span className="px-2.5 py-1 bg-red-50 border border-red-200 text-red-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                      {query.flagCount} flags
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-xl font-bold text-stone-900 mb-4 font-display tracking-tight leading-snug">
+                  {query.question}
+                </h3>
+
+                {query.flaggedBy && query.flaggedBy.length > 0 && (
+                  <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-red-50 border border-red-100 rounded-xl">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <p className="text-xs font-bold text-red-800">
+                      Flagged by {query.flaggedBy.length} user{query.flaggedBy.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                )}
+
+                {/* Contributor Answers (if any) */}
+                {query.answers && query.answers.length > 0 && (
+                  <div className="space-y-3 mb-6">
+                    <h4 className="text-sm font-bold text-stone-700 flex items-center gap-2 uppercase tracking-wider">
+                      <Users className="h-4 w-4 text-stone-400" />
+                      Contributor Answers ({query.answers.length})
+                    </h4>
+                    {query.answers.map((ans, idx) => {
+                      const isSelected = selectedResponse[query._id]?.id === ans._id;
+                      return (
+                        <div
+                          key={ans._id}
+                          onClick={() => {
+                            setSelectedResponse((prev) => ({
+                              ...prev,
+                              [query._id]: { id: ans._id, answer: ans.answer },
+                            }));
+                            setFinalAnswer((prev) => ({
+                              ...prev,
+                              [query._id]: ans.answer,
+                            }));
+                          }}
+                          className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            isSelected
+                              ? "border-[#0D9488] bg-teal-50 shadow-sm"
+                              : "border-stone-200 bg-stone-50 hover:border-teal-300 hover:bg-teal-50/30"
+                          }`}
+                        >
+                          {isSelected && (
+                            <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-[#0D9488] text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Selected
+                            </span>
+                          )}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-black uppercase shrink-0">
+                              {(ans.contributor?.name || "C").charAt(0)}
+                            </div>
+                            <span className="text-xs font-bold text-stone-700">
+                              {ans.contributor?.name || "Contributor"}
+                            </span>
+                            <span className="ml-auto text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                              Answer {idx + 1}
+                            </span>
+                          </div>
+                          <p className="text-stone-700 text-sm leading-relaxed">
+                            {ans.answer}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Answer Editor */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <MessageSquare className="h-4 w-4 text-stone-400" />
+                    Final Answer
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">
+                      (edit before publishing)
+                    </span>
+                  </h4>
+                  <textarea
+                    className="w-full bg-white border border-stone-300 rounded-xl p-4 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                    rows={4}
+                    placeholder="Write or edit the answer here..."
+                    value={rejectedAnswer}
+                    onChange={(e) =>
+                      setFinalAnswer((prev) => ({
+                        ...prev,
+                        [query._id]: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Section Selector */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <Folder className="h-4 w-4 text-stone-400" />
+                    Section
+                    <span className="font-medium text-stone-400 text-[10px] normal-case tracking-normal">
+                      (required for publishing)
+                    </span>
+                  </h4>
+                  {!showNewSectionInput[query._id] ? (
+                    <div className="flex gap-2">
+                      <select
+                        className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                        value={rejectedSection}
+                        onChange={(e) =>
+                          handleSelectSection(query._id, e.target.value || null)
+                        }
+                      >
+                        <option value="">— No section —</option>
+                        {sections?.map((s) => (
+                          <option key={s._id} value={s._id}>
+                            {s.title}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() =>
+                          setShowNewSectionInput((prev) => ({
+                            ...prev,
+                            [query._id]: true,
+                          }))
+                        }
+                        className="flex items-center gap-1.5 px-4 py-3 border border-stone-300 hover:border-teal-400 text-stone-600 hover:text-teal-600 rounded-xl text-sm font-bold transition-colors"
+                        title="Create new section"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter section title..."
+                        className="flex-1 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] transition-all"
+                        value={newSectionName[query._id] || ""}
+                        onChange={(e) =>
+                          setNewSectionName((prev) => ({
+                            ...prev,
+                            [query._id]: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleCreateNewSection(query._id);
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => handleCreateNewSection(query._id)}
+                        disabled={createSectionMutation.isPending}
+                        className="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-colors"
+                      >
+                        {createSectionMutation.isPending ? "Creating..." : "Add"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          setShowNewSectionInput((prev) => ({
+                            ...prev,
+                            [query._id]: false,
+                          }))
+                        }
+                        className="px-3 py-3 border border-stone-300 text-stone-500 hover:text-red-500 hover:border-red-300 rounded-xl text-sm font-bold transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-end items-center">
+                  <button
+                    onClick={() => {
+                      setConfirmDialog({
+                        isOpen: true,
+                        title: "Delete Query",
+                        message: "Are you sure you want to delete this query? This action cannot be undone.",
+                        onConfirm: () => deleteQueryMutation.mutate(query._id),
+                      });
+                    }}
+                    disabled={
+                      deleteQueryMutation.isPending ||
+                      restoreQueryMutation.isPending ||
+                      publishQueryMutation.isPending
+                    }
+                    className="px-4 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Trash2 className={`w-4 h-4 ${deleteQueryMutation.isPending ? "animate-spin" : ""}`} />
+                    {deleteQueryMutation.isPending ? "Deleting..." : "Delete"}
+                  </button>
+                  <button
+                    onClick={() => restoreQueryMutation.mutate(query._id)}
+                    disabled={
+                      restoreQueryMutation.isPending ||
+                      publishQueryMutation.isPending ||
+                      deleteQueryMutation.isPending
+                    }
+                    className="px-4 py-2.5 border border-orange-300 hover:bg-orange-50 text-orange-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <RotateCcw className={`w-4 h-4 ${restoreQueryMutation.isPending ? "animate-spin" : ""}`} />
+                    {restoreQueryMutation.isPending ? "Restoring..." : "Restore to Feed"}
+                  </button>
+                  <button
+                    onClick={() =>
+                      publishQueryMutation.mutate({
+                        id: query._id,
+                        data: {
+                          answer: rejectedAnswer,
+                          responseId: selectedResponse[query._id]?.id ?? undefined,
+                          sectionId: selectedSection[query._id] || undefined,
+                        },
+                      })
+                    }
+                    disabled={
+                      publishQueryMutation.isPending ||
+                      restoreQueryMutation.isPending ||
+                      deleteQueryMutation.isPending ||
+                      !rejectedAnswer?.trim() ||
+                      !rejectedSection
+                    }
+                    className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {publishQueryMutation.isPending ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        PUBLISHING...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        PUBLISH AS FAQ
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Section 3: Posted FAQs (AI Generated) */}
       <div className="mb-6 border-b border-stone-100 pb-3 mt-12 flex items-center justify-between">
         <h2 className="text-xl font-bold text-stone-900 font-display tracking-tight">
-          Pending Approvals (AI Generated)
+          Posted FAQs (AI Generated)
         </h2>
       </div>
 
@@ -782,14 +1147,21 @@ const rejectMutation = useMutation({
 
               <div className="flex gap-3 justify-end">
                 <button
-                  onClick={() => rejectMutation.mutate(faq._id)}
+                  onClick={() => {
+                    setConfirmDialog({
+                      isOpen: true,
+                      title: "Delete FAQ Draft",
+                      message: "Are you sure you want to delete this FAQ draft? This action cannot be undone.",
+                      onConfirm: () => rejectMutation.mutate(faq._id),
+                    });
+                  }}
                   disabled={
                     rejectMutation.isPending || approveMutation.isPending
                   }
-                  className="px-6 py-2 border border-stone-200 hover:bg-red-50 hover:border-red-200 text-stone-600 hover:text-red-600 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2 border border-red-200 hover:bg-red-50 hover:border-red-200 text-red-600 hover:text-red-700 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  <XCircle className="w-4 h-4" />
-                  REJECT
+                  <Trash2 className="w-4 h-4" />
+                  DELETE
                 </button>
                 <button
                   onClick={() =>
@@ -813,6 +1185,18 @@ const rejectMutation = useMutation({
           ))}
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog((p) => ({ ...p, isOpen: false }))}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
 
       {/* Add FAQ Modal */}
       <Modal

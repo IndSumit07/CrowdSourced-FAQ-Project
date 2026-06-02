@@ -49,9 +49,11 @@ export const validateQuery = (schema) => (req, res, next) => {
 export const validateParams = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.params);
   if (!result.success) {
+    console.log("validateParams error:", JSON.stringify(result.error.issues));
     const details = result.error.issues.map((i) => ({
       field: i.path.join("."),
       message: i.message,
+      received: i.received,
     }));
     return next(
       new ValidationError("Route parameter validation failed", details),

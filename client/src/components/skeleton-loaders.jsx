@@ -54,3 +54,23 @@ export const PendingFAQsSkeleton = () => (
     ))}
   </div>
 );
+
+/** Rejected/Flagged queries — 2 cards */
+export const RejectedQueriesSkeleton = () => (
+  <div className="grid gap-6">
+    {Array.from({ length: 2 }).map((_, i) => (
+      <div key={i} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+        <div className="flex gap-2 mb-4">
+          <Sk className="h-5 w-16 rounded-lg" />
+          <Sk className="h-5 w-24 rounded-lg" />
+        </div>
+        <Sk className="h-5 w-3/4 mb-4" />
+        <Sk className="h-16 w-full rounded-xl mb-4" />
+        <div className="flex gap-2">
+          <Sk className="h-7 w-24 rounded-xl" />
+          <Sk className="h-7 w-20 rounded-xl" />
+        </div>
+      </div>
+    ))}
+  </div>
+);

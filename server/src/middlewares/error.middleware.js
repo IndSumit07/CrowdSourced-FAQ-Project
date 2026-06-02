@@ -22,6 +22,7 @@ export const errorHandler = (err, req, res, next) => {
     statusCode = 422;
     code = "MONGOOSE_VALIDATION_ERROR";
     message = "Database validation failed";
+    console.log("Mongoose ValidationError:", JSON.stringify(err.errors), "\nStack:", err.stack);
     details = Object.values(err.errors).map((e) => ({
       field: e.path,
       message: e.message,

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { FAQRepository } from "../../faq/repository/faq.repository.js";
 import { FAQService } from "../../faq/service/faq.service.js";
 import { Section } from "../../faq/schema/section.schema.js";
@@ -6,6 +7,8 @@ import {
   QueryRepository,
   ContributorResponseRepository,
 } from "../../queries/repository/query.repository.js";
+import { Query } from "../../queries/schema/query.schema.js";
+import { Notification } from "../../notifications/schema/notification.schema.js";
 import { EmbeddingService } from "../../ai/service/embedding.service.js";
 import { NotFoundError, BadRequestError } from "../../../utils/errors.js";
 import { cacheDelPattern } from "../../../utils/cache.js";
@@ -70,8 +73,8 @@ export class AdminService {
   ) {
     const query = await queryRepo.findById(queryId);
     if (!query) throw new NotFoundError("Query");
-    if (query.status !== "admin-review")
-      throw new BadRequestError("Query is not pending review");
+    if (!["admin-review", "flagged"].includes(query.status))
+      throw new BadRequestError("Query is not in a publishable state");
 
     const answers = await responseRepo.findByQuery(queryId);
 
@@ -288,8 +291,94 @@ export class AdminService {
         ...queryStats,
         total: Object.values(queryStats).reduce((sum, count) => sum + count, 0),
         adminReview: queryStats["admin-review"] ?? 0,
+        flagged: queryStats["flagged"] ?? 0,
+        adminDeleted: queryStats["admin-deleted"] ?? 0,
       },
     };
+  }
+
+  async getRejectedQueries(params) {
+    const page = parseInt(params.page || 1);
+    const limit = parseInt(params.limit || 20);
+    const skip = (page - 1) * limit;
+
+    const filter = { status: "flagged" };
+    const { queries, total } = await queryRepo.findAll({
+      page,
+      limit,
+      skip,
+      sort: { updatedAt: -1 },
+      filter,
+    });
+
+    return { queries, total };
+  }
+
+  async restoreQuery(queryId) {
+    const query = await queryRepo.findById(queryId);
+    if (!query) throw new NotFoundError("Query");
+    if (!["flagged", "admin-deleted"].includes(query.status))
+      throw new BadRequestError("Only flagged or admin-deleted queries can be restored");
+
+    const updated = await queryRepo.updateById(queryId, {
+      status: "open",
+      flagCount: 0,
+      flaggedBy: [],
+    });
+
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+
+    await Notification.create({
+      recipient: creatorId,
+      type: "query_restored",
+      message: "Your query has been restored to the feed!",
+      metadata: { queryId },
+    });
+
+    try {
+      const io = getIO();
+      io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+        type: "query_restored",
+        message: "Your query has been restored to the feed!",
+        queryId,
+      });
+    } catch (e) {
+      logger.warn({ msg: "Could not emit restore notification", err: e.message });
+    }
+
+    return updated;
+  }
+
+  async deleteQuery(queryId) {
+    const query = await queryRepo.findById(queryId);
+    if (!query) throw new NotFoundError("Query");
+
+    await Query.collection.updateOne(
+      { _id: new mongoose.Types.ObjectId(queryId) },
+      { $set: { status: "admin-deleted" } }
+    );
+
+    const creatorId = (query.creator?._id || query.creator)?.toString();
+
+    await Notification.create({
+      recipient: creatorId,
+      type: "query_deleted_by_admin",
+      message: "Your query was removed by an admin.",
+      metadata: { queryId },
+    });
+
+    try {
+      const io = getIO();
+      io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+        type: "query_deleted_by_admin",
+        message: "Your query was removed by an admin.",
+        queryId,
+      });
+    } catch (e) {
+      logger.warn({ msg: "Could not emit delete notification", err: e.message });
+    }
+
+    return { deleted: true };
   }
 
   async createDirectFAQ(data, adminId) {
