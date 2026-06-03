@@ -4,7 +4,6 @@ import { z } from "zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import toast from "react-hot-toast";
-import SiteHeader from "../../components/layout/SiteHeader";
 import { useGoogleLogin } from "@react-oauth/google";
 
 const loginSchema = z.object({
@@ -57,8 +56,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF6F0] p-4 relative">
-      <SiteHeader />
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden mt-16 relative z-10">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden relative z-10">
         <div className="p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">
