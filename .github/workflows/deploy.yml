@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
 
           script: |
-            cd ~/CSFAQ
+            cd ~/CrowdSourced-FAQ-Project
             git pull origin main
             cd server
             npm install
