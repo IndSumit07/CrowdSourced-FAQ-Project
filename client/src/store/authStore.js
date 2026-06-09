@@ -98,6 +98,7 @@ export const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        accessToken: state.accessToken,
       }),
     },
   ),
@@ -106,4 +107,9 @@ export const useAuthStore = create(
 // Listen for forced logout from axios interceptor
 window.addEventListener("auth:logout", () => {
   useAuthStore.getState().clearAuth();
+});
+
+// Sync updated access token from axios interceptor
+window.addEventListener("auth:token-refreshed", (e) => {
+  useAuthStore.setState({ accessToken: e.detail });
 });

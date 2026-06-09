@@ -63,9 +63,28 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await api.post('/auth/refresh');
-        const newToken = data.data.accessToken;
-        localStorage.setItem('accessToken', newToken);
+        const refreshTokenTask = async () => {
+          // Double check if another tab refreshed while we were waiting for the lock
+          const currentToken = localStorage.getItem('accessToken');
+          const requestToken = originalRequest.headers.Authorization?.split(' ')[1];
+          if (currentToken && currentToken !== requestToken) {
+            return currentToken;
+          }
+          const { data } = await api.post('/auth/refresh');
+          const newlyFetchedToken = data.data.accessToken;
+          // Set it inside the lock so the next tab reads the updated token immediately
+          localStorage.setItem('accessToken', newlyFetchedToken);
+          return newlyFetchedToken;
+        };
+
+        let newToken;
+        if (window.navigator?.locks) {
+          newToken = await navigator.locks.request('auth-refresh', refreshTokenTask);
+        } else {
+          newToken = await refreshTokenTask();
+        }
+
+        window.dispatchEvent(new CustomEvent('auth:token-refreshed', { detail: newToken }));
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;

@@ -54,7 +54,11 @@ export class AuthController {
 
   logout = asyncHandler(async (req, res) => {
     await authService.logout(req.user.id);
-    res.clearCookie("refreshToken", { httpOnly: true, sameSite: "strict" });
+    res.clearCookie("refreshToken", {
+      httpOnly: authConfig.cookie.httpOnly,
+      secure: authConfig.cookie.secure,
+      sameSite: authConfig.cookie.sameSite,
+    });
     return ApiResponse.success(res, null, "Logged out successfully");
   });
 
