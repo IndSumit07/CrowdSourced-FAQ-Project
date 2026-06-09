@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 
 const SiteHeader = () => {
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, logout, user } = useAuthStore();
 
   return (
     <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
@@ -67,7 +67,7 @@ const SiteHeader = () => {
           ) : (
             <>
               <Link
-                to="/dashboard"
+                to={user?.role === "admin" ? "/admin" : "/dashboard"}
                 className="text-sm font-semibold text-stone-600 hover:text-stone-900 tracking-wide transition-colors select-none"
               >
                 Dashboard
