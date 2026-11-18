@@ -22,7 +22,7 @@ const ProfilePage = () => {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="mb-8 text-center">
-        <div className="w-24 h-24 bg-[#B45309] text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 shadow-lg shadow-[#B45309]/20">
+        <div className="w-24 h-24 bg-gradient-to-br from-teal-500 to-teal-700 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 shadow-lg shadow-teal-500/20">
           {user?.name?.charAt(0).toUpperCase()}
         </div>
         <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-1">{user?.name}</h1>

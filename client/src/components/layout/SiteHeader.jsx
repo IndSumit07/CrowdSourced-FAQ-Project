@@ -11,7 +11,7 @@ const SiteHeader = () => {
         <Link
           to="/"
           className="flex items-center gap-3 cursor-pointer select-none"
-          title="QueryCare Home"
+          title="CSFAQs Home"
         >
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0D9488] to-[#0F766E] flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105">
             <svg
@@ -30,8 +30,8 @@ const SiteHeader = () => {
           </div>
           {/* Center Stylized Brand Name */}
           <span className="text-lg md:text-xl font-semibold tracking-tight select-none font-home">
-            <span className="text-stone-900">Query</span>
-            <span className="text-[#0D9488]">Care</span>
+            <span className="text-stone-900">CS</span>
+            <span className="text-[#0D9488]">FAQs</span>
           </span>
         </Link>
 

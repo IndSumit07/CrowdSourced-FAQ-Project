@@ -160,7 +160,7 @@ const FAQPage = () => {
   };
 
   return (
-    <div className="w-full font-space-grotesk">
+    <div className="w-full font-space-grotesk page-enter">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">
           Knowledge Base
@@ -297,7 +297,7 @@ const FAQPage = () => {
                     <div
                       key={faq._id}
                       id={`faq-${faq._id}`}
-                      className="bg-white border border-stone-200 rounded-2xl shadow-sm"
+                      className="bg-white border border-stone-200 rounded-2xl shadow-sm hover:shadow-md hover:border-teal-200 transition-all duration-200"
                     >
                       <button
                         type="button"
@@ -319,7 +319,7 @@ const FAQPage = () => {
                         </span>
                       </button>
                       {isOpen && (
-                        <div className="px-5 pb-5">
+                        <div className="px-5 pb-5 faq-answer-enter">
                           <div className="text-sm text-stone-600 leading-relaxed mb-4">
                             {faq.answer}
                           </div>

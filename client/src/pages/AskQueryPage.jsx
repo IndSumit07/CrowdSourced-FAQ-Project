@@ -212,7 +212,7 @@ const AskQueryPage = () => {
   const hasRelated = relatedFAQs.length > 0;
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-2xl page-enter">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">

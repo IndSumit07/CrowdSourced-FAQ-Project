@@ -64,14 +64,14 @@ export const AppLayout = ({ children }) => {
       {/* ─── Sidebar ─────────────────────────────────────────── */}
       <aside className="w-64 flex-shrink-0 flex flex-col border-r border-stone-200 bg-white fixed h-full z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         {/* Brand */}
-        <div className="px-6 py-6 border-b border-stone-100">
+        <div className="px-6 py-5 border-b border-stone-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D9488] to-[#0F766E] shadow-sm flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-stone-900 text-[15px] font-display tracking-tight leading-tight">QueryCare</p>
-              <p className="text-[11px] font-medium text-stone-500 uppercase tracking-wider">AI-Powered</p>
+              <p className="font-bold text-stone-900 text-[15px] font-display tracking-tight leading-tight">CSFAQs</p>
+              <p className="text-[11px] font-medium text-stone-500 uppercase tracking-wider">GLA University</p>
             </div>
           </div>
         </div>
