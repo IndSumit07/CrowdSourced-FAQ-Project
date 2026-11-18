@@ -39,9 +39,9 @@ export class EmbeddingService {
    * @param {string} text
    * @returns {Promise<number[]>}
    */
-  async embed(text) {
+  async embed(text, task = "retrieval.passage") {
     const normalized = this.#normalizeText(text);
-    const cacheKey = `embed:${Buffer.from(normalized).toString("base64").slice(0, 64)}`;
+    const cacheKey = `embed:${task}:${Buffer.from(normalized).toString("base64").slice(0, 64)}`;
 
     const cached = await cacheGet(cacheKey);
     if (cached) {
@@ -50,7 +50,7 @@ export class EmbeddingService {
     }
 
     const embeddingProvider = await this.#getEmbeddingProvider();
-    const embedding = await embeddingProvider.generateEmbedding(normalized);
+    const embedding = await embeddingProvider.generateEmbedding(normalized, task);
     await cacheSet(cacheKey, embedding, 86400); // Cache 24h
     return embedding;
   }
@@ -58,7 +58,7 @@ export class EmbeddingService {
   /**
    * Batch generates embeddings for an array of texts.
    */
-  async embedBatch(texts) {
-    return Promise.all(texts.map((t) => this.embed(t)));
+  async embedBatch(texts, task = "retrieval.passage") {
+    return Promise.all(texts.map((t) => this.embed(t, task)));
   }
 }

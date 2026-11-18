@@ -29,71 +29,95 @@ export class QueryExpiryService {
       let processed = 0;
 
       for (const query of expiredQueries) {
-        const responses = await responseRepo.findByQuery(query._id);
-        const answers = responses
-          .map((response) => response.answer)
-          .filter(Boolean);
+        try {
+          const responses = await responseRepo.findByQuery(query._id);
+          const answers = responses
+            .map((response) => response.answer)
+            .filter(Boolean);
 
-        const aiSynthesizedAnswer =
-          answers.length > 0
-            ? sanitizeAiGeneratedText(
+          let aiSynthesizedAnswer =
+            "No contributor responses were submitted before the deadline.";
+          let aiSummaryUsed = false;
+
+          if (answers.length > 0) {
+            try {
+              aiSynthesizedAnswer = sanitizeAiGeneratedText(
                 await aiValidationService.summarizeAnswers(
                   query.question,
                   answers,
                 ),
-              )
-            : "No contributor responses were submitted before the deadline.";
+              );
+              aiSummaryUsed = true;
+            } catch (aiErr) {
+              logger.warn({
+                msg: "AI answer synthesis failed during expiry sweep, using fallback",
+                queryId: query._id,
+                err: aiErr.message,
+              });
+              aiSynthesizedAnswer = sanitizeAiGeneratedText(
+                answers[0] || "Contributor answers submitted.",
+              );
+              aiSummaryUsed = false;
+            }
+          }
 
-        await queryRepo.updateById(query._id, {
-          status: "admin-review",
-          aiSynthesizedAnswer,
-          aiSummaryUsed: answers.length > 0,
-          processingStartedAt: new Date(),
-          deadlineJobId: null,
-        });
-
-        try {
-          const io = getIO();
-          const queryId = query._id.toString();
-          const creatorId = (query.creator?._id || query.creator)?.toString();
-
-          io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_EXPIRED, {
-            queryId,
-            question: query.question,
+          await queryRepo.updateById(query._id, {
+            status: "admin-review",
+            aiSynthesizedAnswer,
+            aiSummaryUsed,
+            processingStartedAt: new Date(),
+            deadlineJobId: null,
           });
 
-          if (creatorId) {
-            io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
-              type: "query_expired",
-              message: "Your query expired and is pending admin review.",
+          try {
+            const io = getIO();
+            const queryId = query._id.toString();
+            const creatorId = (query.creator?._id || query.creator)?.toString();
+
+            io.to("feed:contributors").emit(SOCKET_EVENTS.QUERY_EXPIRED, {
+              queryId,
+              question: query.question,
+            });
+
+            if (creatorId) {
+              io.to(`user:${creatorId}`).emit(SOCKET_EVENTS.USER_NOTIFICATION, {
+                type: "query_expired",
+                message: "Your query expired and is pending admin review.",
+                queryId,
+                aiSynthesizedAnswer,
+              });
+            }
+
+            io.to("room:admin").emit(SOCKET_EVENTS.FAQ_PENDING_REVIEW, {
+              queryId,
+              title: query.question,
+              aiSynthesizedAnswer,
+              category: query.category,
+              responseCount: answers.length,
+            });
+
+            io.to("room:admin").emit(SOCKET_EVENTS.ADMIN_NOTIFICATION, {
+              type: "query_expired_review",
+              message: `Expired query ready for review: "${query.question}"`,
               queryId,
               aiSynthesizedAnswer,
+              responseCount: answers.length,
+            });
+          } catch (socketErr) {
+            logger.warn({
+              msg: "Could not emit expired query events",
+              err: socketErr.message,
             });
           }
 
-          io.to("room:admin").emit(SOCKET_EVENTS.FAQ_PENDING_REVIEW, {
-            queryId,
-            title: query.question,
-            aiSynthesizedAnswer,
-            category: query.category,
-            responseCount: answers.length,
-          });
-
-          io.to("room:admin").emit(SOCKET_EVENTS.ADMIN_NOTIFICATION, {
-            type: "query_expired_review",
-            message: `Expired query ready for review: "${query.question}"`,
-            queryId,
-            aiSynthesizedAnswer,
-            responseCount: answers.length,
-          });
-        } catch (socketErr) {
-          logger.warn({
-            msg: "Could not emit expired query events",
-            err: socketErr.message,
+          processed += 1;
+        } catch (queryErr) {
+          logger.error({
+            msg: "Failed to process single expired query",
+            queryId: query._id,
+            err: queryErr.message,
           });
         }
-
-        processed += 1;
       }
 
       if (processed > 0) {

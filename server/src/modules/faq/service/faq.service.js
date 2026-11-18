@@ -34,7 +34,7 @@ export class FAQService {
     }
 
     // Generate embedding for vector search
-    const embedding = await this.#embeddingService.embed(question);
+    const embedding = await this.#embeddingService.embed(question, "retrieval.query");
 
     // Fetch candidate matches from both Vector Search and Full-Text Search concurrently
     const [vectorMatches, { results: textMatches }] = await Promise.all([

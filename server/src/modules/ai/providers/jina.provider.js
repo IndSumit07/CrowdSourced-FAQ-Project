@@ -22,7 +22,7 @@ export class JinaProvider extends AIProvider {
     return "jina";
   }
 
-  async generateEmbedding(text) {
+  async generateEmbedding(text, task = "retrieval.passage") {
     try {
       const response = await fetch(`${this.#baseUrl}/embeddings`, {
         method: "POST",
@@ -33,6 +33,8 @@ export class JinaProvider extends AIProvider {
         body: JSON.stringify({
           model: this.#model,
           input: [text],
+          dimensions: aiConfig.vectorSearch.dimensions,
+          task,
         }),
       });
 

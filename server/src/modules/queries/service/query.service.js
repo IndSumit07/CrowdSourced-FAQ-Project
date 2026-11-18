@@ -48,7 +48,7 @@ export class QueryService {
    */
   async askQuery(question) {
     // Step 1: Generate embedding and retrieve related FAQs
-    const embedding = await this.#embeddingService.embed(question);
+    const embedding = await this.#embeddingService.embed(question, "retrieval.query");
     const resolution = await this.#faqService.resolveQuery(question);
 
     // Build flat list of related FAQs (best match + alternatives)
@@ -85,7 +85,7 @@ export class QueryService {
 
     // Step 2: Generate embedding for the query
     const embedding =
-      resolution.embedding || (await this.#embeddingService.embed(question));
+      resolution.embedding || (await this.#embeddingService.embed(question, "retrieval.query"));
 
     // Step 3: Calculate deadline
     // Use ms arithmetic — setHours() truncates decimals (e.g. 0.1h → 0h)

@@ -28,7 +28,7 @@ export const aiConfig = Object.freeze({
   },
   groq: {
     apiKey: env.GROQ_API_KEY,
-    chatModel: env.GROQ_CHAT_MODEL || "llama-3.1-8b-instant",
+    chatModel: env.GROQ_CHAT_MODEL || "openai/gpt-oss-120b",
     baseUrl: env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
     maxOutputTokens: 2048,
     temperature: 0.3,
