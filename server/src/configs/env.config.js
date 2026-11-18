@@ -47,7 +47,7 @@ const envSchema = z.object({
 
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(768),
   VECTOR_SEARCH_INDEX: z.string().default("faq_vector_index"),
-  VECTOR_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).default(0.82),
+  VECTOR_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).default(0.60),
 
   QUERY_DEADLINE_HOURS: z.coerce.number().positive().default(1),
   MIN_CONTRIBUTOR_RESPONSES: z.coerce.number().int().positive().default(2),

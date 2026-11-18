@@ -39,15 +39,28 @@ export class FAQRepository {
 
       return { results, total };
     } catch (err) {
-      // Fallback to regex search if text index is not yet built in Atlas
-      const escaped = String(query || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Fallback to keyword regex search if Atlas text index is missing or building
+      const STOP_WORDS = new Set([
+        "what", "is", "the", "a", "an", "and", "or", "in", "of", "to", "for", "with",
+        "on", "at", "by", "from", "about", "tell", "me", "how", "can", "i", "are", "do",
+        "does", "there", "any", "gla", "university"
+      ]);
+      const words = String(query || "")
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .map((w) => w.trim().toLowerCase())
+        .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+
+      const searchTerms = words.length > 0 ? words : [query.trim()].filter(Boolean);
+      const pattern = searchTerms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+
       const regexFilter = {
         published: true,
         ...(category && { category }),
-        ...(escaped && {
+        ...(pattern && {
           $or: [
-            { title: { $regex: escaped, $options: "i" } },
-            { answer: { $regex: escaped, $options: "i" } },
+            { title: { $regex: pattern, $options: "i" } },
+            { answer: { $regex: pattern, $options: "i" } },
           ],
         }),
       };
@@ -61,7 +74,9 @@ export class FAQRepository {
         FAQ.countDocuments(regexFilter),
       ]);
 
-      return { results, total };
+      // Assign score: 2.0 so fallback results pass relevancy thresholds
+      const scoredResults = results.map((r) => ({ ...r, score: 2.0 }));
+      return { results: scoredResults, total };
     }
   }
 
@@ -69,39 +84,44 @@ export class FAQRepository {
    * MongoDB Atlas Vector Search for semantic similarity.
    */
   async vectorSearch(embedding, { limit = 5, minScore = aiConfig.vectorSearch.similarityThreshold } = {}) {
-    const results = await FAQ.aggregate([
-      {
-        $vectorSearch: {
-          index: aiConfig.vectorSearch.indexName,
-          path: "embedding",
-          queryVector: embedding,
-          numCandidates: aiConfig.vectorSearch.numCandidates,
-          limit: limit * 2, // Over-fetch to filter by score
+    try {
+      const results = await FAQ.aggregate([
+        {
+          $vectorSearch: {
+            index: aiConfig.vectorSearch.indexName,
+            path: "embedding",
+            queryVector: embedding,
+            numCandidates: aiConfig.vectorSearch.numCandidates,
+            limit: limit * 2, // Over-fetch to filter by score
+          },
         },
-      },
-      {
-        $addFields: {
-          vectorScore: { $meta: "vectorSearchScore" },
+        {
+          $addFields: {
+            vectorScore: { $meta: "vectorSearchScore" },
+          },
         },
-      },
-      {
-        $match: {
-          published: true,
-          vectorScore: { $gte: minScore },
+        {
+          $match: {
+            published: true,
+            vectorScore: { $gte: minScore },
+          },
         },
-      },
-      {
-        $limit: limit,
-      },
-      {
-        $project: {
-          embedding: 0,
-          __v: 0,
+        {
+          $limit: limit,
         },
-      },
-    ]);
+        {
+          $project: {
+            embedding: 0,
+            __v: 0,
+          },
+        },
+      ]);
 
-    return results;
+      return results;
+    } catch (err) {
+      // Don't crash if Atlas vector index is not yet built or configured
+      return [];
+    }
   }
 
   async create(data) {

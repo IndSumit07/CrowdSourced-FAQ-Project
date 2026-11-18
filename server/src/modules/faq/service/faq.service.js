@@ -34,19 +34,23 @@ export class FAQService {
     }
 
     // Generate embedding for vector search
-    const embedding = await this.#embeddingService.embed(question, "retrieval.query");
+    let embedding = null;
+    try {
+      embedding = await this.#embeddingService.embed(question, "retrieval.query");
+    } catch (err) {
+      logger.warn({ msg: "Query embedding failed, falling back to text search", err: err.message });
+    }
 
     // Fetch candidate matches from both Vector Search and Full-Text Search concurrently
     const [vectorMatches, { results: textMatches }] = await Promise.all([
-      this.#faqRepo.vectorSearch(embedding, { limit: 5 }),
+      embedding ? this.#faqRepo.vectorSearch(embedding, { limit: 5 }) : Promise.resolve([]),
       this.#faqRepo.textSearch(question, { limit: 5 }),
     ]);
 
     const mergedMatches = [];
     const seenIds = new Set();
 
-    // 1. Process Vector matches first. They are already filtered by the similarity threshold
-    // in the database pipeline, so they are guaranteed to be semantically highly relevant.
+    // 1. Process Vector matches first
     for (const match of vectorMatches) {
       const matchId = match._id.toString();
       if (!seenIds.has(matchId)) {
@@ -58,13 +62,12 @@ export class FAQService {
       }
     }
 
-    // 2. Process Full-Text matches.
-    // MongoDB text scores are not normalized, but a score < 1.5 usually indicates matching only minor/common words.
-    // We only accept text search matches that are highly relevant (score >= 1.5).
-    const MIN_TEXT_SCORE = 1.5;
+    // 2. Process Full-Text / Keyword matches
+    const MIN_TEXT_SCORE = 0.5;
     for (const match of textMatches) {
       const matchId = match._id.toString();
-      if (match.score >= MIN_TEXT_SCORE && !seenIds.has(matchId)) {
+      const score = typeof match.score === "number" ? match.score : 1.0;
+      if (score >= MIN_TEXT_SCORE && !seenIds.has(matchId)) {
         seenIds.add(matchId);
         mergedMatches.push({
           ...match,
