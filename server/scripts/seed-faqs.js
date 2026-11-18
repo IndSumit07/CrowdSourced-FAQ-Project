@@ -103,6 +103,7 @@ const seedFaqs = async () => {
   ];
 
   await FAQ.deleteMany({});
+  await FAQ.createIndexes();
 
   for (const section of uniqueSections) {
     await Section.findOneAndUpdate(

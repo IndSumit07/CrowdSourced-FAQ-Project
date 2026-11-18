@@ -62,6 +62,12 @@ const bootstrap = async () => {
   try {
     await connectDB();
 
+    // Ensure database indexes are created (Mongoose disables autoIndex in production)
+    const { FAQ } = await import("./src/modules/faq/schema/faq.schema.js");
+    await FAQ.createIndexes().catch((err) => {
+      logger.warn({ msg: "FAQ index creation warning", err: err.message });
+    });
+
     // Seed sections from faqs.json
     const sectionService = new SectionService();
     await sectionService.seedFromJson();

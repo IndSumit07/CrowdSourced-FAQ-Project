@@ -69,7 +69,13 @@ export class UserRepository {
   async findAll({ page, limit, skip, role, search, sort }) {
     const filter = { isActive: true };
     if (role) filter.role = role;
-    if (search) filter.$text = { $search: search };
+    if (search) {
+      const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: { $regex: escaped, $options: "i" } },
+        { email: { $regex: escaped, $options: "i" } },
+      ];
+    }
 
     const [users, total] = await Promise.all([
       User.find(filter).sort(sort).skip(skip).limit(limit).lean(),

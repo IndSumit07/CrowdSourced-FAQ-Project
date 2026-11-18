@@ -15,27 +15,54 @@ export class FAQRepository {
   }
 
   /**
-   * Full-text search using MongoDB text indexes.
+   * Full-text search using MongoDB text indexes with regex fallback.
    */
   async textSearch(query, { page = 1, limit = 20, category } = {}) {
-    const filter = {
-      $text: { $search: query },
-      published: true,
-      ...(category && { category }),
-    };
     const skip = (page - 1) * limit;
 
-    const [results, total] = await Promise.all([
-      FAQ.find(filter, { score: { $meta: "textScore" } })
-        .sort({ score: { $meta: "textScore" } })
-        .skip(skip)
-        .limit(limit)
-        .populate("section", "title order")
-        .lean(),
-      FAQ.countDocuments(filter),
-    ]);
+    try {
+      const filter = {
+        $text: { $search: query },
+        published: true,
+        ...(category && { category }),
+      };
 
-    return { results, total };
+      const [results, total] = await Promise.all([
+        FAQ.find(filter, { score: { $meta: "textScore" } })
+          .sort({ score: { $meta: "textScore" } })
+          .skip(skip)
+          .limit(limit)
+          .populate("section", "title order")
+          .lean(),
+        FAQ.countDocuments(filter),
+      ]);
+
+      return { results, total };
+    } catch (err) {
+      // Fallback to regex search if text index is not yet built in Atlas
+      const escaped = String(query || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regexFilter = {
+        published: true,
+        ...(category && { category }),
+        ...(escaped && {
+          $or: [
+            { title: { $regex: escaped, $options: "i" } },
+            { answer: { $regex: escaped, $options: "i" } },
+          ],
+        }),
+      };
+
+      const [results, total] = await Promise.all([
+        FAQ.find(regexFilter)
+          .skip(skip)
+          .limit(limit)
+          .populate("section", "title order")
+          .lean(),
+        FAQ.countDocuments(regexFilter),
+      ]);
+
+      return { results, total };
+    }
   }
 
   /**
