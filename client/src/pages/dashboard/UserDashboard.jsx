@@ -54,7 +54,7 @@ const UserDashboard = () => {
   }, {});
 
   return (
-    <div className="w-full space-y-12">
+    <div className="w-full space-y-12 page-enter">
       {/* My Queries Section */}
       <section>
         <div className="mb-6 sm:mb-8">

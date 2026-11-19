@@ -20,7 +20,7 @@ const HeroSection = () => {
         <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-full px-4 py-2 mb-8 shadow-sm hover:shadow-md transition-shadow">
           <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
           <span className="text-xs font-bold text-stone-600 tracking-wide uppercase">
-            Community-Powered Q&A Platform
+            GLA University · Community-Powered Q&A
           </span>
         </div>
 
@@ -88,7 +88,7 @@ const HeroSection = () => {
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 mt-16 pt-8 border-t border-stone-200/60 w-full max-w-3xl">
           <div className="text-center">
             <div className="text-3xl font-bold text-stone-900 font-display">
-              50k+
+              100+
             </div>
             <div className="text-xs text-stone-500 font-semibold uppercase tracking-wider mt-1">
               Verified FAQs
@@ -97,19 +97,19 @@ const HeroSection = () => {
           <div className="hidden md:block w-px h-12 bg-stone-200" />
           <div className="text-center">
             <div className="text-3xl font-bold text-stone-900 font-display">
-              10k+
+              Open
             </div>
             <div className="text-xs text-stone-500 font-semibold uppercase tracking-wider mt-1">
-              Expert Curators
+              To All Students
             </div>
           </div>
           <div className="hidden md:block w-px h-12 bg-stone-200" />
           <div className="text-center">
             <div className="text-3xl font-bold text-teal-600 font-display">
-              99.4%
+              Free
             </div>
             <div className="text-xs text-stone-500 font-semibold uppercase tracking-wider mt-1">
-              Accuracy Rate
+              Always & Forever
             </div>
           </div>
         </div>

@@ -77,12 +77,25 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF6F0] p-4 relative py-20">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden relative z-10">
+        {/* CSFAQs brand strip */}
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-8 py-5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v5.018Z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-white font-bold text-base font-display tracking-tight leading-tight">CSFAQs</p>
+            <p className="text-teal-100 text-[11px] font-medium uppercase tracking-wider">GLA University, Mathura</p>
+          </div>
+        </div>
+
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-stone-900 font-serif-display mb-2">
+            <h1 className="text-3xl font-black text-stone-900 font-display mb-2">
               Create Account
             </h1>
-            <p className="text-stone-500">Join the QueryCare community</p>
+            <p className="text-stone-500">Join the CSFAQs community at GLA University, Mathura</p>
           </div>
 
           {/* Google Sign-Up Button */}

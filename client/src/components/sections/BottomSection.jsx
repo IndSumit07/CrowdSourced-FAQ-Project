@@ -1,21 +1,21 @@
 import { Link } from "react-router-dom";
 
-/* ─── Premium Live Q&A Preview Card ─── */
+/* ─── CSFAQs Live Q&A Preview Card ─── */
 const QAPreviewCard = () => (
-  <div className="w-full bg-white rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-stone-200 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md animate-pulse-card">
+  <div className="w-full bg-white rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-stone-200 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md">
     <div className="absolute top-0 left-0 right-0 h-1 bg-teal-600" />
 
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center font-display font-bold text-stone-900 text-[15px] shadow-sm">
-          VI
+        <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center font-display font-bold text-teal-700 text-[13px] shadow-sm">
+          GLA
         </div>
         <div>
           <h4 className="text-sm font-bold text-stone-900 leading-tight">
-            VINS FAQ System
+            CSFAQs
           </h4>
           <p className="text-[11px] text-teal-600 font-bold">
-            Verified Intern Query
+            Verified Student Query
           </p>
         </div>
       </div>
@@ -30,7 +30,7 @@ const QAPreviewCard = () => (
         Question
       </div>
       <p className="text-sm font-bold text-stone-900 leading-snug">
-        "What is the Vicharanashala internship?"
+        "What programming languages are covered in B.Tech CSE at GLA University?"
       </p>
 
       <div className="w-full h-px bg-stone-100 my-0.5" />
@@ -39,7 +39,7 @@ const QAPreviewCard = () => (
         Top Answer
       </div>
       <p className="text-[12.5px] text-stone-600 font-semibold leading-relaxed bg-stone-50 p-3.5 rounded-xl border border-stone-200 shadow-inner">
-        "A two-month internship run by Vicharanashala (a research lab at IIT Ropar). You work on a real open-source project under a mentor, after a short training phase. It is free — no charges."
+        "The curriculum covers C, C++, Java, Python, and web technologies. Advanced electives include Data Science and Cloud Computing. Check the official syllabus on the GLA University portal for the latest details."
       </p>
     </div>
 
@@ -49,13 +49,13 @@ const QAPreviewCard = () => (
           <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
             <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 00.458 1.258l1.792 2.149A1 1 0 009 19.5v-3.5h5.518a2 2 0 001.996-1.836l.746-8.191A2 2 0 0015.264 4H10.5v-.5A1.5 1.5 0 009 2h-.5a1 1 0 00-1 1v4.333L6 10.333z" />
           </svg>
-          <span className="font-bold">+1.2k Views</span>
+          <span className="font-bold">Community Verified</span>
         </div>
         <span className="text-[11px] text-stone-400 font-bold">
-          100% Community Verified
+          Peer-reviewed answer
         </span>
       </div>
-      <span className="text-[10px] text-stone-400">Updated 1m ago</span>
+      <span className="text-[10px] text-stone-400">GLA University, Mathura</span>
     </div>
   </div>
 );
@@ -138,10 +138,10 @@ const BottomSection = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h5 className="text-[11px] font-bold text-stone-400 leading-none mb-1.5">
-                    Internship Duration
+                    Active Contributors
                   </h5>
                   <p className="text-2xl font-bold text-stone-900 leading-none font-home-display">
-                    2 Months
+                    Growing
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -190,7 +190,7 @@ const BottomSection = () => {
 
             {/* Section badges */}
             <div className="flex flex-wrap gap-2 ml-0 sm:ml-12">
-              {['Internship', 'NOC', 'Certificates', 'ViBe', 'Yaksha'].map((section) => (
+              {['Academics', 'Placements', 'Exams', 'Campus Life', 'Clubs'].map((section) => (
                 <div
                   key={section}
                   className="px-3 py-1.5 border border-stone-200/50 rounded-lg bg-[#FAF6F0]/50 hover:-translate-y-0.5 transition-transform cursor-pointer text-[11px] font-bold text-stone-700"
@@ -212,12 +212,12 @@ const BottomSection = () => {
             {/* Vertical text label */}
             <div className="hidden lg:flex items-center justify-center pr-4 shrink-0">
               <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap select-none">
-                100+ Intern Questions Answered
+                100+ Student Questions Answered
               </span>
             </div>
 
             <div className="lg:hidden mb-3 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap">
-              100+ Intern Questions Answered
+              100+ Student Questions Answered
             </div>
 
             {/* Vertical divider */}
@@ -227,10 +227,10 @@ const BottomSection = () => {
             <div className="flex flex-col justify-between gap-8 pl-1.5">
               <div className="flex flex-col gap-4">
                 <div className="text-[11px] font-bold text-teal-600 tracking-widest uppercase">
-                  VINS Programme
+                  CSFAQs Platform
                 </div>
                 <h3 className="text-3xl font-bold text-stone-900 leading-tight font-home-display tracking-tight">
-                  Intern-First Answers
+                  Student-First Answers
                 </h3>
 
                 <ul className="flex flex-col gap-4 text-stone-600 text-sm font-medium leading-relaxed">
@@ -249,8 +249,9 @@ const BottomSection = () => {
                       />
                     </svg>
                     <span>
-                      <strong>IIT Ropar Certificate:</strong> Earn a certificate
-                      from Vicharanashala Lab upon completion.
+                      <strong>GLA University Students:</strong> Ask questions, browse
+                      community-verified answers and get clarity on academics, campus
+                      life, placements and more.
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
@@ -268,8 +269,8 @@ const BottomSection = () => {
                       />
                     </svg>
                     <span>
-                      <strong>Real Open-Source Projects:</strong> Work on AI/ML,
-                      web dev, NLP, and education-tech projects.
+                      <strong>AI-Powered Search:</strong> Get instant answers from our
+                      RAG-based knowledge engine before submitting to expert contributors.
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
@@ -287,8 +288,8 @@ const BottomSection = () => {
                       />
                     </svg>
                     <span>
-                      <strong>Free Internship:</strong> No charges, no stipend —
-                      real experience under expert mentors.
+                      <strong>Community Driven:</strong> Every answer is submitted and
+                      peer-reviewed by fellow students and verified contributors.
                     </span>
                   </li>
                 </ul>
