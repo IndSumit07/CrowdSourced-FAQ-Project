@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { env } from "../../../configs/env.config.js";
+import "./section.schema.js";
 
 const faqSchema = new mongoose.Schema(
   {

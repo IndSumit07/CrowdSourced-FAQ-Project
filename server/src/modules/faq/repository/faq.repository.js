@@ -1,5 +1,7 @@
 import { FAQ } from "../schema/faq.schema.js";
+import { Section } from "../schema/section.schema.js";
 import { aiConfig } from "../../../configs/ai.config.js";
+import { logger } from "../../../utils/logger.js";
 
 export class FAQRepository {
   /**

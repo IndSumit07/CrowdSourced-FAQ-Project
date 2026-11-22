@@ -325,14 +325,16 @@ const FAQPage = () => {
                           </div>
                           <div className="flex items-center justify-between border-t border-stone-100 pt-3">
                             <div className="flex gap-2 flex-wrap">
-                              {faq.tags?.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
+                              {faq.tags
+                                ?.filter((tag) => !tag.includes(":"))
+                                .map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
                             </div>
                             <div className="text-xs font-bold text-[#0D9488]">
                               {faq.upvotes || 0} Helpful
