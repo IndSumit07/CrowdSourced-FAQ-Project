@@ -1,13 +1,15 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
 import { connectDB, disconnectDB } from "../src/configs/mongodb.config.js";
 import { FAQ } from "../src/modules/faq/schema/faq.schema.js";
 import { Section } from "../src/modules/faq/schema/section.schema.js";
 import { cacheDelPattern } from "../src/utils/cache.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const run = async () => {
   try {

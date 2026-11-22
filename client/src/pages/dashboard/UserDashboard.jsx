@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryService } from "../../services/api";
+import { queryService, faqService } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Link } from "react-router-dom";
@@ -8,6 +9,8 @@ import toast from "react-hot-toast";
 const UserDashboard = () => {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
+  const [openFaqIds, setOpenFaqIds] = useState(() => new Set());
+  const [selectedFaqSection, setSelectedFaqSection] = useState("All");
 
   const {
     data: queries,
@@ -25,7 +28,28 @@ const UserDashboard = () => {
     enabled: isAuthenticated,
   });
 
-  
+  const { data: faqsData, isLoading: faqsLoading } = useQuery({
+    queryKey: ["dashboard-faqs"],
+    queryFn: async () => {
+      const res = await faqService.getAll({ page: 1, limit: 100 });
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.docs)) return payload.docs;
+      if (Array.isArray(payload?.faqs)) return payload.faqs;
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+
+  const faqs = faqsData || [];
+
+  const toggleFaqOpen = (id) => {
+    setOpenFaqIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id) => queryService.delete(id),
@@ -46,6 +70,28 @@ const UserDashboard = () => {
     deleteMutation.mutate(queryId);
   };
 
+  const faqSections = [
+    "All",
+    ...new Set(
+      faqs
+        .map((f) => {
+          if (f.section && typeof f.section === "object") return f.section.title;
+          const cleanTag = f.tags?.find((t) => !t.includes(":") && t.length > 2);
+          return cleanTag || f.category || "General";
+        })
+        .filter(Boolean)
+    ),
+  ];
+
+  const filteredFaqs = selectedFaqSection === "All"
+    ? faqs
+    : faqs.filter((f) => {
+        const secTitle = f.section && typeof f.section === "object"
+          ? f.section.title
+          : f.tags?.find((t) => !t.includes(":") && t.length > 2) || f.category || "General";
+        return secTitle === selectedFaqSection;
+      });
+
   const groupedQueries = (queries || []).reduce((acc, query) => {
     const key = query.category || "General";
     if (!acc[key]) acc[key] = [];
@@ -55,6 +101,105 @@ const UserDashboard = () => {
 
   return (
     <div className="w-full space-y-12 page-enter">
+      {/* Knowledge Base FAQs Section - Always visible */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-stone-900 tracking-tight">
+              Knowledge Base FAQs
+            </h2>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Browse {faqs.length > 0 ? `${faqs.length} community-curated questions and answers` : "community-curated FAQs"}
+            </p>
+          </div>
+          <Link
+            to="/faqs"
+            className="text-xs font-extrabold text-teal-600 hover:text-teal-800 uppercase tracking-wider flex items-center gap-1"
+          >
+            Explore all {faqs.length} FAQs →
+          </Link>
+        </div>
+
+        {/* Section filter pills */}
+        {faqSections.length > 2 && (
+          <div className="flex overflow-x-auto gap-1.5 pb-2 mb-4 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+            {faqSections.map((sec) => (
+              <button
+                key={sec}
+                type="button"
+                onClick={() => setSelectedFaqSection(sec)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold shrink-0 transition-all ${
+                  selectedFaqSection === sec
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                }`}
+              >
+                {sec}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {faqsLoading ? (
+          <div className="grid gap-3">
+            <Skeleton className="h-16 w-full rounded-2xl" />
+            <Skeleton className="h-16 w-full rounded-2xl" />
+            <Skeleton className="h-16 w-full rounded-2xl" />
+          </div>
+        ) : filteredFaqs.length === 0 ? (
+          <div className="text-center py-10 border border-dashed border-stone-300 rounded-2xl bg-stone-50">
+            <p className="text-stone-500 text-sm font-medium">No FAQs found.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {filteredFaqs.map((faq) => {
+              const isOpen = openFaqIds.has(faq._id);
+              const secTitle = faq.section && typeof faq.section === "object"
+                ? faq.section.title
+                : faq.tags?.find((t) => !t.includes(":") && t.length > 2);
+
+              return (
+                <div
+                  key={faq._id}
+                  className="bg-white border border-stone-200 rounded-2xl shadow-sm hover:shadow-md hover:border-teal-200 transition-all"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleFaqOpen(faq._id)}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+                  >
+                    <span className="text-sm font-bold text-stone-900">
+                      {faq.title}
+                    </span>
+                    <span
+                      className={`text-stone-400 text-lg transition-transform shrink-0 ${isOpen ? "rotate-45" : ""}`}
+                    >
+                      +
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 border-t border-stone-100 pt-3">
+                      <p className="text-sm text-stone-600 leading-relaxed mb-3">
+                        {faq.answer}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        {secTitle && (
+                          <span className="px-2.5 py-0.5 bg-teal-50 text-teal-700 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                            {secTitle}
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-teal-600 ml-auto">
+                          {faq.upvotes || 0} Helpful
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
       {/* My Queries Section */}
       <section>
         <div className="mb-6 sm:mb-8">

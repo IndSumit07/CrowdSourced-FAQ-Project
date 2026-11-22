@@ -72,6 +72,12 @@ const bootstrap = async () => {
     const sectionService = new SectionService();
     await sectionService.seedFromJson();
 
+    // Ensure all existing FAQs in DB are published so they appear in FAQ section
+    await FAQ.updateMany(
+      { published: { $ne: true } },
+      { $set: { published: true, publishedAt: new Date() } }
+    ).catch(() => {});
+
     await queryExpiryService.sweepExpiredQueries();
     queryExpirySweepTimer = setInterval(() => {
       queryExpiryService.sweepExpiredQueries().catch((err) => {

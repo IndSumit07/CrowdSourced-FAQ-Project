@@ -36,9 +36,19 @@ app.use(
 
 app.use(
   cors({
-    origin: env.CORS_ORIGIN
-      ? env.CORS_ORIGIN.split(",").map((o) => o.trim())
-      : true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const configured = env.CORS_ORIGIN
+        ? env.CORS_ORIGIN.split(",").map((o) => o.trim())
+        : [];
+      if (
+        configured.includes(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS origin ${origin} not allowed`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

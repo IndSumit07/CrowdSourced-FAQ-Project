@@ -1,16 +1,25 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { faqService, sectionService } from "../services/api"; // Import sectionService
-import { SearchBar, Select } from "../components/ui/SearchBar"; // Import Select
+import { faqService, sectionService } from "../services/api";
+import { SearchBar } from "../components/ui/SearchBar";
 import { Skeleton } from "../components/ui/Skeleton";
 import { BookOpen, ChevronDown, X } from "lucide-react";
 
 const FAQPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [openIds, setOpenIds] = useState(() => new Set());
   const [activeSection, setActiveSection] = useState(null);
-  const [selectedSection, setSelectedSection] = useState(null);
+  const [selectedSection, setSelectedSection] = useState(() => searchParams.get("section") || null);
   const sectionRefs = useRef({});
+
+  useEffect(() => {
+    const urlSection = searchParams.get("section");
+    if (urlSection && urlSection !== selectedSection) {
+      setSelectedSection(urlSection);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!selectedSection) return;
@@ -39,22 +48,63 @@ const FAQPage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { data: sectionsData } = useQuery({
+    queryKey: ["sections"],
+    queryFn: async () => {
+      try {
+        const res = await sectionService.getAll();
+        const payload = res?.data?.data;
+        return Array.isArray(payload?.sections)
+          ? payload.sections
+          : Array.isArray(payload)
+            ? payload
+            : [];
+      } catch (err) {
+        return [];
+      }
+    },
+  });
+
+  const sectionsMap = useMemo(() => {
+    const map = new Map();
+    (sectionsData || []).forEach((s) => {
+      if (s._id) map.set(s._id.toString(), s);
+      if (s.title) map.set(s.title, s);
+    });
+    return map;
+  }, [sectionsData]);
+
   const fetchAllPages = async (fetchPage) => {
-    const firstRes = await fetchPage(1);
-    const firstData = firstRes.data.data || [];
-    const pagination = firstRes.data.pagination;
+    try {
+      const firstRes = await fetchPage(1);
+      const resBody = firstRes?.data;
+      const firstData = Array.isArray(resBody?.data)
+        ? resBody.data
+        : Array.isArray(resBody)
+          ? resBody
+          : resBody?.faqs || resBody?.results || [];
+      const pagination = resBody?.pagination;
 
-    if (!pagination?.hasNextPage) return firstData;
+      if (!pagination?.hasNextPage) return firstData;
 
-    const totalPages = pagination.totalPages || 1;
-    const pagePromises = [];
-    for (let page = 2; page <= totalPages; page += 1) {
-      pagePromises.push(fetchPage(page));
+      const totalPages = pagination.totalPages || 1;
+      const pagePromises = [];
+      for (let page = 2; page <= totalPages; page += 1) {
+        pagePromises.push(fetchPage(page));
+      }
+      const rest = await Promise.all(pagePromises);
+      const restData = rest.flatMap((res) => {
+        const b = res?.data;
+        if (Array.isArray(b?.data)) return b.data;
+        if (Array.isArray(b)) return b;
+        return b?.faqs || b?.results || [];
+      });
+
+      return [...firstData, ...restData];
+    } catch (err) {
+      console.error("Failed to fetch FAQs:", err);
+      throw err;
     }
-    const rest = await Promise.all(pagePromises);
-    const restData = rest.flatMap((res) => res.data.data || []);
-
-    return [...firstData, ...restData];
   };
 
   const { data, isLoading, error } = useQuery({
@@ -70,7 +120,14 @@ const FAQPage = () => {
     },
   });
 
-  const faqs = data?.docs || data || [];
+  const faqs = useMemo(() => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.faqs)) return data.faqs;
+    if (Array.isArray(data?.results)) return data.results;
+    if (Array.isArray(data?.docs)) return data.docs;
+    return [];
+  }, [data]);
 
   const groupedFaqs = useMemo(() => {
     const getTagValue = (tags, prefix) =>
@@ -102,16 +159,29 @@ const FAQPage = () => {
 
       if (faq.section && typeof faq.section === "object") {
         sectionTitle = faq.section.title || null;
-        sectionOrder = faq.section.order || 999;
+        sectionOrder = faq.section.order ?? 999;
+      } else if (typeof faq.section === "string" && sectionsMap.has(faq.section)) {
+        const sec = sectionsMap.get(faq.section);
+        sectionTitle = sec?.title || null;
+        sectionOrder = sec?.order ?? 999;
       }
 
       if (!sectionTitle) {
-        sectionTitle =
-          getTagValue(faq.tags, "section:")
-            ?.split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ") || "General";
-        sectionOrder = Number(getTagValue(faq.tags, "section-id:") || 999);
+        const directTitleTag = faq.tags?.find(
+          (t) => !t.includes(":") && t.length > 2
+        );
+        if (directTitleTag) {
+          sectionTitle = directTitleTag;
+          const orderTag = getTagValue(faq.tags, "section-id:");
+          sectionOrder = orderTag ? Number(orderTag) : 999;
+        } else {
+          sectionTitle =
+            getTagValue(faq.tags, "section:")
+              ?.split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ") || "General";
+          sectionOrder = Number(getTagValue(faq.tags, "section-id:") || 999);
+        }
       }
 
       if (!groups.has(sectionTitle)) {
@@ -129,10 +199,10 @@ const FAQPage = () => {
         items: group.items.sort((a, b) => {
           if (a.questionId && b.questionId)
             return compareQuestionIds(a.questionId, b.questionId);
-          return a.title.localeCompare(b.title);
+          return (a.title || "").localeCompare(b.title || "");
         }),
       }));
-  }, [faqs]);
+  }, [faqs, sectionsMap]);
 
   const displayedGroups = selectedSection
     ? groupedFaqs.filter((g) => g.sectionTitle === selectedSection)
@@ -156,7 +226,13 @@ const FAQPage = () => {
   };
 
   const handleSectionClick = (sectionTitle) => {
-    setSelectedSection(sectionTitle === selectedSection ? null : sectionTitle);
+    const next = sectionTitle === selectedSection ? null : sectionTitle;
+    setSelectedSection(next);
+    if (next) {
+      setSearchParams({ section: next });
+    } else {
+      setSearchParams({});
+    }
   };
 
   return (

@@ -10,7 +10,7 @@ export class FAQRepository {
   async findExactMatch(title) {
     return FAQ.findOne({
       title: { $regex: new RegExp(`^${title.trim()}$`, "i") },
-      published: true,
+      published: { $ne: false },
     })
       .populate("section", "title order")
       .lean();
@@ -25,7 +25,7 @@ export class FAQRepository {
     try {
       const filter = {
         $text: { $search: query },
-        published: true,
+        published: { $ne: false },
         ...(category && { category }),
       };
 
@@ -57,7 +57,7 @@ export class FAQRepository {
       const pattern = searchTerms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 
       const regexFilter = {
-        published: true,
+        published: { $ne: false },
         ...(category && { category }),
         ...(pattern && {
           $or: [

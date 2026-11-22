@@ -92,10 +92,10 @@ export class FAQService {
     return { faq: null, matchType: "none", alternatives: [], embedding };
   }
 
-  async getAll(query) {
+  async getAll(query = {}) {
     const { page, limit, skip } = buildPagination(query.page, query.limit);
     const sort = buildSortStage(query.sortBy, ["createdAt", "views", "upvotes", "title"]);
-    const filter = { published: true };
+    const filter = { published: { $ne: false } };
     if (query.category) filter.category = query.category;
 
     const cacheKey = `faqs:list:${JSON.stringify({ page, limit, sort, filter })}`;

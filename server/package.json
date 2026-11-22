@@ -11,7 +11,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "lint": "eslint src --ext .js",
-    "seed:faqs": "node scripts/seed-faqs.js"
+    "seed:faqs": "node scripts/seed-faqs.js",
+    "sync:faqs": "node scripts/sync-faq-tags.js"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.888.0",

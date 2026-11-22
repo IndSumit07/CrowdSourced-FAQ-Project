@@ -1,64 +1,80 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { faqService, sectionService } from "../../services/api";
 
 /* ─── CSFAQs Live Q&A Preview Card ─── */
-const QAPreviewCard = () => (
-  <div className="w-full bg-white rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-stone-200 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-    <div className="absolute top-0 left-0 right-0 h-1 bg-teal-600" />
+const QAPreviewCard = ({ faq }) => {
+  const defaultQuestion = "What is GLA University?";
+  const defaultAnswer =
+    "GLA University is a private university in Mathura, Uttar Pradesh, offering undergraduate, postgraduate, doctoral and diploma programs in Engineering, Management, Law, Pharmacy, Biotechnology, Sciences, Commerce, Education, Agriculture and Arts.";
 
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center font-display font-bold text-teal-700 text-[13px] shadow-sm">
-          GLA
+  const question = faq?.title || defaultQuestion;
+  const answer = faq?.answer || defaultAnswer;
+  const sectionTitle =
+    typeof faq?.section === "object"
+      ? faq?.section?.title
+      : faq?.tags?.find((t) => !t.includes(":") && t.length > 2) ||
+        "GLA University";
+
+  return (
+    <div className="w-full bg-white rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-stone-200 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-teal-600" />
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center font-display font-bold text-teal-700 text-[13px] shadow-sm">
+            GLA
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-stone-900 leading-tight">
+              CSFAQs
+            </h4>
+            <p className="text-[11px] text-teal-600 font-bold">{sectionTitle}</p>
+          </div>
         </div>
-        <div>
-          <h4 className="text-sm font-bold text-stone-900 leading-tight">
-            CSFAQs
-          </h4>
-          <p className="text-[11px] text-teal-600 font-bold">
-            Verified Student Query
-          </p>
-        </div>
-      </div>
-      <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#0D9488] text-[10px] font-bold border border-teal-100/60 flex items-center gap-1.5 shadow-sm">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#0D9488] animate-pulse" />
-        Live Answer
-      </span>
-    </div>
-
-    <div className="flex flex-col gap-2.5 text-left">
-      <div className="text-[10px] font-extrabold text-stone-400 tracking-wider uppercase leading-none">
-        Question
-      </div>
-      <p className="text-sm font-bold text-stone-900 leading-snug">
-        "What programming languages are covered in B.Tech CSE at GLA University?"
-      </p>
-
-      <div className="w-full h-px bg-stone-100 my-0.5" />
-
-      <div className="text-[10px] font-extrabold text-[#0D9488] tracking-wider uppercase leading-none">
-        Top Answer
-      </div>
-      <p className="text-[12.5px] text-stone-600 font-semibold leading-relaxed bg-stone-50 p-3.5 rounded-xl border border-stone-200 shadow-inner">
-        "The curriculum covers C, C++, Java, Python, and web technologies. Advanced electives include Data Science and Cloud Computing. Check the official syllabus on the GLA University portal for the latest details."
-      </p>
-    </div>
-
-    <div className="flex items-center justify-between mt-1 text-xs text-stone-500 font-semibold border-t border-stone-100 pt-3">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-[#0D9488] bg-teal-50/50 px-2 py-1 rounded-lg border border-teal-100/30">
-          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
-            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 00.458 1.258l1.792 2.149A1 1 0 009 19.5v-3.5h5.518a2 2 0 001.996-1.836l.746-8.191A2 2 0 0015.264 4H10.5v-.5A1.5 1.5 0 009 2h-.5a1 1 0 00-1 1v4.333L6 10.333z" />
-          </svg>
-          <span className="font-bold">Community Verified</span>
-        </div>
-        <span className="text-[11px] text-stone-400 font-bold">
-          Peer-reviewed answer
+        <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#0D9488] text-[10px] font-bold border border-teal-100/60 flex items-center gap-1.5 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0D9488] animate-pulse" />
+          Verified Answer
         </span>
       </div>
-      <span className="text-[10px] text-stone-400">GLA University, Mathura</span>
+
+      <div className="flex flex-col gap-2.5 text-left">
+        <div className="text-[10px] font-extrabold text-stone-400 tracking-wider uppercase leading-none">
+          Question
+        </div>
+        <p className="text-sm font-bold text-stone-900 leading-snug">
+          "{question}"
+        </p>
+
+        <div className="w-full h-px bg-stone-100 my-0.5" />
+
+        <div className="text-[10px] font-extrabold text-[#0D9488] tracking-wider uppercase leading-none">
+          Top Answer
+        </div>
+        <p className="text-[12.5px] text-stone-600 font-semibold leading-relaxed bg-stone-50 p-3.5 rounded-xl border border-stone-200 shadow-inner">
+          "{answer}"
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between mt-1 text-xs text-stone-500 font-semibold border-t border-stone-100 pt-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[#0D9488] bg-teal-50/50 px-2 py-1 rounded-lg border border-teal-100/30">
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+              <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 00.458 1.258l1.792 2.149A1 1 0 009 19.5v-3.5h5.518a2 2 0 001.996-1.836l.746-8.191A2 2 0 0015.264 4H10.5v-.5A1.5 1.5 0 009 2h-.5a1 1 0 00-1 1v4.333L6 10.333z" />
+            </svg>
+            <span className="font-bold">Community Verified</span>
+          </div>
+          <span className="text-[11px] text-stone-400 font-bold">
+            Peer-reviewed answer
+          </span>
+        </div>
+        <Link to="/faqs" className="text-[10px] text-teal-600 font-bold hover:underline">
+          View all FAQs →
+        </Link>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ─── Avatar helper ─── */
 const Avatar = ({ color, darkColor, zIndex, offset }) => (
@@ -88,6 +104,45 @@ const BottomSection = () => {
     { color: "#A78BFA", dark: "#6D28D9" },
   ];
 
+  const { data: sectionsData } = useQuery({
+    queryKey: ["sections"],
+    queryFn: async () => {
+      try {
+        const res = await sectionService.getAll();
+        const payload = res.data?.data;
+        return Array.isArray(payload?.sections)
+          ? payload.sections
+          : Array.isArray(payload)
+            ? payload
+            : [];
+      } catch (err) {
+        return [];
+      }
+    },
+  });
+
+  const { data: faqsData } = useQuery({
+    queryKey: ["bottom-faqs"],
+    queryFn: async () => {
+      try {
+        const res = await faqService.getAll({ page: 1, limit: 10 });
+        const payload = res.data?.data;
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload?.docs)) return payload.docs;
+        if (Array.isArray(payload?.faqs)) return payload.faqs;
+        return [];
+      } catch (err) {
+        return [];
+      }
+    },
+  });
+
+  const sections = (sectionsData || []).filter(
+    (s) => s.title && s.title !== "General",
+  ).slice(0, 10);
+  const faqs = faqsData || [];
+  const previewFaq = faqs[0] || null;
+
   return (
     <>
       {/* ── 3-Column Grid ── */}
@@ -111,7 +166,7 @@ const BottomSection = () => {
                     Total Questions
                   </h5>
                   <p className="text-2xl font-bold text-stone-900 leading-none font-home-display">
-                    100+
+                    65+
                   </p>
                 </div>
                 <span className="px-2 py-1 rounded-lg bg-teal-50 text-[#0D9488] text-[9.5px] font-bold shadow-sm">
@@ -126,7 +181,7 @@ const BottomSection = () => {
                     Topic Sections
                   </h5>
                   <p className="text-2xl font-bold text-stone-900 leading-none font-home-display">
-                    13
+                    {sections.length > 0 ? sections.length : "10"}
                   </p>
                 </div>
                 <span className="px-2 py-1 rounded-lg bg-stone-100 text-stone-600 text-[9.5px] font-bold shadow-sm">
@@ -165,7 +220,7 @@ const BottomSection = () => {
             </div>
           </div>
 
-{/* Platform Access Card */}
+          {/* Platform Access Card */}
           <div className="bg-white rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-stone-200 text-left">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
@@ -188,15 +243,23 @@ const BottomSection = () => {
               </span>
             </div>
 
-            {/* Section badges */}
+            {/* Section badges linking directly to that section in /faqs */}
             <div className="flex flex-wrap gap-2 ml-0 sm:ml-12">
-              {['Academics', 'Placements', 'Exams', 'Campus Life', 'Clubs'].map((section) => (
-                <div
-                  key={section}
-                  className="px-3 py-1.5 border border-stone-200/50 rounded-lg bg-[#FAF6F0]/50 hover:-translate-y-0.5 transition-transform cursor-pointer text-[11px] font-bold text-stone-700"
+              {(sections.length > 0 ? sections : [
+                { title: "About GLA University" },
+                { title: "Admissions & Eligibility" },
+                { title: "Programs & Courses" },
+                { title: "Fees, Scholarships & Refunds" },
+                { title: "Hostel & Campus Facilities" },
+                { title: "Placements & Internships" },
+              ]).map((sec) => (
+                <Link
+                  key={sec._id || sec.title}
+                  to={`/faqs?section=${encodeURIComponent(sec.title)}`}
+                  className="px-3 py-1.5 border border-stone-200/50 rounded-lg bg-[#FAF6F0]/50 hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 transition-all cursor-pointer text-[11px] font-bold text-stone-700"
                 >
-                  {section}
-                </div>
+                  {sec.title}
+                </Link>
               ))}
             </div>
           </div>
@@ -204,120 +267,120 @@ const BottomSection = () => {
 
         {/* ───────── CENTER COLUMN ───────── */}
         <div className="flex items-center justify-center">
-            <QAPreviewCard />
+          <QAPreviewCard faq={previewFaq} />
+        </div>
+
+        {/* ───────── RIGHT COLUMN ───────── */}
+        <div className="flex items-stretch text-left">
+          {/* Vertical text label */}
+          <div className="hidden lg:flex items-center justify-center pr-4 shrink-0">
+            <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap select-none">
+              65+ Student Questions Answered
+            </span>
           </div>
 
-          {/* ───────── RIGHT COLUMN ───────── */}
-          <div className="flex items-stretch text-left">
-            {/* Vertical text label */}
-            <div className="hidden lg:flex items-center justify-center pr-4 shrink-0">
-              <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap select-none">
-                100+ Student Questions Answered
-              </span>
-            </div>
+          <div className="lg:hidden mb-3 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap">
+            65+ Student Questions Answered
+          </div>
 
-            <div className="lg:hidden mb-3 text-[11px] font-bold text-stone-400 tracking-[2px] uppercase whitespace-nowrap">
-              100+ Student Questions Answered
-            </div>
+          {/* Vertical divider */}
+          <div className="hidden lg:block w-px bg-stone-300 self-stretch mx-3 shrink-0" />
 
-            {/* Vertical divider */}
-            <div className="hidden lg:block w-px bg-stone-300 self-stretch mx-3 shrink-0" />
-
-            {/* Value Propositions & Premium CTA */}
-            <div className="flex flex-col justify-between gap-8 pl-1.5">
-              <div className="flex flex-col gap-4">
-                <div className="text-[11px] font-bold text-teal-600 tracking-widest uppercase">
-                  CSFAQs Platform
-                </div>
-                <h3 className="text-3xl font-bold text-stone-900 leading-tight font-home-display tracking-tight">
-                  Student-First Answers
-                </h3>
-
-                <ul className="flex flex-col gap-4 text-stone-600 text-sm font-medium leading-relaxed">
-                  <li className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m4.5 12.75 6 6 9-13.5"
-                      />
-                    </svg>
-                    <span>
-                      <strong>GLA University Students:</strong> Ask questions, browse
-                      community-verified answers and get clarity on academics, campus
-                      life, placements and more.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m4.5 12.75 6 6 9-13.5"
-                      />
-                    </svg>
-                    <span>
-                      <strong>AI-Powered Search:</strong> Get instant answers from our
-                      RAG-based knowledge engine before submitting to expert contributors.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m4.5 12.75 6 6 9-13.5"
-                      />
-                    </svg>
-                    <span>
-                      <strong>Community Driven:</strong> Every answer is submitted and
-                      peer-reviewed by fellow students and verified contributors.
-                    </span>
-                  </li>
-                </ul>
+          {/* Value Propositions & Premium CTA */}
+          <div className="flex flex-col justify-between gap-8 pl-1.5">
+            <div className="flex flex-col gap-4">
+              <div className="text-[11px] font-bold text-teal-600 tracking-widest uppercase">
+                CSFAQs Platform
               </div>
+              <h3 className="text-3xl font-bold text-stone-900 leading-tight font-home-display tracking-tight">
+                Student-First Answers
+              </h3>
 
-              <Link
-                to="/faqs"
-                className="group flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl px-6 py-3.5 text-sm font-bold tracking-wide w-fit hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-sm"
-              >
-                Explore the FAQ Database
-                <svg
-                  className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                  />
-                </svg>
-              </Link>
+              <ul className="flex flex-col gap-4 text-stone-600 text-sm font-medium leading-relaxed">
+                <li className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
+                  </svg>
+                  <span>
+                    <strong>GLA University Students:</strong> Ask questions, browse
+                    community-verified answers and get clarity on academics, campus
+                    life, placements and more.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
+                  </svg>
+                  <span>
+                    <strong>AI-Powered Search:</strong> Get instant answers from our
+                    RAG-based knowledge engine before submitting to expert contributors.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-teal-600 mt-0.5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
+                  </svg>
+                  <span>
+                    <strong>Community Driven:</strong> Every answer is submitted and
+                    peer-reviewed by fellow students and verified contributors.
+                  </span>
+                </li>
+              </ul>
             </div>
+
+            <Link
+              to="/faqs"
+              className="group flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl px-6 py-3.5 text-sm font-bold tracking-wide w-fit hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-sm"
+            >
+              Explore the FAQ Database
+              <svg
+                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                />
+              </svg>
+            </Link>
           </div>
-        </section>
-      </>
+        </div>
+      </section>
+    </>
   );
 };
 
